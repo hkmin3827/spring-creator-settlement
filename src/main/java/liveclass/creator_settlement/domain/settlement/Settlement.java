@@ -23,6 +23,9 @@ public class Settlement {
     @Column(name = "creator_id", nullable = false, updatable = false)
     public String creatorId;
 
+    @Column(name = "creator_name", nullable = false)
+    public String creatorName;
+
     @Column(name = "year_month", nullable = false, length = 7, updatable = false)
     public String yearMonth;
 
@@ -59,7 +62,7 @@ public class Settlement {
 
 
     public static Settlement confirm(
-            String id, String creatorId, String yearMonth,
+            String id, String creatorId, String creatorName, String yearMonth,
             BigDecimal amount, BigDecimal refundAmount, BigDecimal netAmount,
             BigDecimal commissionRate, BigDecimal commissionAmount, BigDecimal settlementAmount,
             long sellCount, long cancelCount
@@ -67,6 +70,7 @@ public class Settlement {
         Settlement s = new Settlement();
         s.id = id;
         s.creatorId = creatorId;
+        s.creatorName = creatorName;
         s.yearMonth = yearMonth;
         s.status = SettlementStatus.CONFIRMED;
         s.amount = amount;

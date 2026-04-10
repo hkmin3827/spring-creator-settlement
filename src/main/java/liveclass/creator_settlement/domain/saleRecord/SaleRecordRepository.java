@@ -39,10 +39,10 @@ public interface SaleRecordRepository extends JpaRepository<SaleRecord, String> 
     List<SaleRecord> findAllByCreatorId(@Param("creatorId") String creatorId);
 
     @Query("""
-        SELECT c.creatorId, SUM(sr.amount), COUNT(sr.id)
+        SELECT c.creatorId, c.creatorName, SUM(sr.amount), COUNT(sr.id)
         FROM SaleRecord sr JOIN Course c ON c.id = sr.courseId
         WHERE sr.paidAt >= :start AND sr.paidAt <= :end
-        GROUP BY c.creatorId
+        GROUP BY c.creatorId, c.creatorName
         """)
     List<Object[]> aggregateSalesByCreatorInRange(
             @Param("start") LocalDateTime start,

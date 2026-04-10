@@ -62,7 +62,7 @@ public class DataInitializer implements ApplicationRunner {
                     id,
                     node.get("courseId").asString(),
                     node.get("studentId").asString(),
-                    node.get("amount").asLong(),
+                    node.get("amount").decimalValue(),
                     LocalDateTime.parse(node.get("paidAt").asString())
                 ));
             }

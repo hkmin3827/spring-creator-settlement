@@ -22,17 +22,19 @@ public class SettlementController {
     @GetMapping(value = "/creator/{creatorId}", version = "v1")
     public SettlementRes getMonthlySettlement(
             @PathVariable String creatorId,
+            @RequestParam String creatorName,
             @RequestParam String yearMonth
     ) {
-        return settlementQueryService.getMonthlySettlement(creatorId, YearMonth.parse(yearMonth));
+        return settlementQueryService.getMonthlySettlement(creatorId, creatorName, YearMonth.parse(yearMonth));
     }
 
     @PostMapping(value = "/confirm", version = "v1")
     public SettlementRes confirm(
             @RequestParam String creatorId,
+            @RequestParam String creatorName,
             @RequestParam String yearMonth
     ) {
-        return settlementService.confirm(creatorId, YearMonth.parse(yearMonth));
+        return settlementService.confirm(creatorId, creatorName, YearMonth.parse(yearMonth));
     }
 
     @PostMapping(value = "/{settlementId}/pay", version = "v1")

@@ -9,6 +9,7 @@ public record OperatorSettlementRes(
 ) {
     public record CreatorSettlementEntry(
         String creatorId,
+        String creatorName,
         BigDecimal totalAmount,
         BigDecimal refundAmount,
         BigDecimal netAmount,

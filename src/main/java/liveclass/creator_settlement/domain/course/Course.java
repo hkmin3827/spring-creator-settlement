@@ -19,11 +19,13 @@ public class Course {
     @Column(name = "creator_id", nullable = false)
     public String creatorId;
 
+    @Column(name = "creator_name", nullable = false)
+    public String creatorName;
+
     @Column(length = 255)
     public String title;
 
-
-    @Column(precision = 19, scale =2)
+    @Column(precision = 10, scale =2)
     public BigDecimal price;
 
     public static Course of(String id, String creatorId, String title) {

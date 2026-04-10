@@ -25,7 +25,7 @@ public class SettlementService {
     private final IdGenerator idGenerator;
     private final SettlementQueryService settlementQueryService;
 
-    public SettlementRes confirm(String creatorId, YearMonth yearMonth) {
+    public SettlementRes confirm(String creatorId, String creatorName, YearMonth yearMonth) {
         creatorRepository.findById(creatorId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CREATOR_NOT_FOUND));
 
@@ -43,6 +43,7 @@ public class SettlementService {
         Settlement settlement = Settlement.confirm(
                 idGenerator.generateSettlementId(),
                 creatorId,
+                creatorName,
                 yearMonth.toString(),
                 calc.totalAmount(),
                 calc.refundAmount(),

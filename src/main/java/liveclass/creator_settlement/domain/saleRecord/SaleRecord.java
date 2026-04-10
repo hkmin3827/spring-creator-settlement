@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -32,7 +33,7 @@ public class SaleRecord {
     public String studentId;
 
     @Column(nullable = false)
-    public Long amount;
+    public BigDecimal amount;
 
     @CreationTimestamp
     public LocalDateTime paidAt;
@@ -40,7 +41,7 @@ public class SaleRecord {
     @Version
     public Long version;
 
-    public static SaleRecord of(String id, String courseId, String studentId, Long amount, LocalDateTime paidAt) {
+    public static SaleRecord of(String id, String courseId, String studentId, BigDecimal amount, LocalDateTime paidAt) {
         SaleRecord record = new SaleRecord();
         record.id = id;
         record.courseId = courseId;

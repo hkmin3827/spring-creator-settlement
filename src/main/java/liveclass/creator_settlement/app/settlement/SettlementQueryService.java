@@ -21,10 +21,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -44,13 +41,13 @@ public class SettlementQueryService {
     private static final String PENDING_CACHE_PREFIX = "settlement:pending:";
     private static final long CACHE_TTL_HOURS = 1;
 
-    public SettlementRes getMonthlySettlement(String creatorId, YearMonth yearMonth) {
+    public SettlementRes getMonthlySettlement(String creatorId, String creatorName, YearMonth yearMonth) {
         creatorRepository.findById(creatorId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CREATOR_NOT_FOUND));
 
         return settlementRepository.findByCreatorIdAndYearMonth(creatorId, yearMonth.toString())
                 .map(SettlementRes::from)
-                .orElseGet(() -> getPendingSettlement(creatorId, yearMonth));
+                .orElseGet(() -> getPendingSettlement(creatorId, creatorName, yearMonth));
     }
 
     public OperatorSettlementRes getOperatorAggregate(LocalDate startDate, LocalDate endDate) {
@@ -60,21 +57,24 @@ public class SettlementQueryService {
         List<Object[]> saleAggregates = saleRecordRepository.aggregateSalesByCreatorInRange(start, end);
         List<Object[]> cancelAggregates = cancelRecordRepository.aggregateCancelsByCreatorInRange(start, end);
 
-        Map<String, Long> saleTotals = new HashMap<>();
+        Map<String, String> creatorNames = new HashMap<>();
+        Map<String, BigDecimal> saleTotals = new HashMap<>();
         Map<String, Long> saleCounts = new HashMap<>();
         for (Object[] row : saleAggregates) {
-            saleTotals.put((String) row[0], (Long) row[1]);
-            saleCounts.put((String) row[0], (Long) row[2]);
+            creatorNames.put((String) row[0], (String) row[1]);
+            saleTotals.put((String) row[0], (BigDecimal) row[2]);
+            saleCounts.put((String) row[0], (Long) row[3]);
         }
 
         Map<String, BigDecimal> cancelTotals = new HashMap<>();
         Map<String, Long> cancelCounts = new HashMap<>();
         for (Object[] row : cancelAggregates) {
-            cancelTotals.put((String) row[0], (BigDecimal) row[1]);
-            cancelCounts.put((String) row[0], (Long) row[2]);
+            creatorNames.putIfAbsent((String) row[0], (String) row[1]);
+            cancelTotals.put((String) row[0], (BigDecimal) row[2]);
+            cancelCounts.put((String) row[0], (Long) row[3]);
         }
 
-        var allCreatorIds = new java.util.HashSet<String>();
+        var allCreatorIds = new HashSet<String>();
         allCreatorIds.addAll(saleTotals.keySet());
         allCreatorIds.addAll(cancelTotals.keySet());
 
@@ -82,7 +82,7 @@ public class SettlementQueryService {
         Money totalSettlement = Money.ZERO;
 
         for (String cId : allCreatorIds) {
-            Money totalAmount = Money.of(BigDecimal.valueOf(saleTotals.getOrDefault(cId, 0L)));
+            Money totalAmount = Money.of(saleTotals.getOrDefault(cId, BigDecimal.ZERO));
             Money refundAmount = Money.of(cancelTotals.getOrDefault(cId, BigDecimal.ZERO));
             Money netAmount = totalAmount.subtract(refundAmount);
             Money commissionAmount = Money.of(netAmount.amount().multiply(commissionRate));
@@ -92,6 +92,7 @@ public class SettlementQueryService {
 
             entries.add(new OperatorSettlementRes.CreatorSettlementEntry(
                     cId,
+                    creatorNames.get(cId),
                     totalAmount.amount(),
                     refundAmount.amount(),
                     netAmount.amount(),
@@ -136,7 +137,7 @@ public class SettlementQueryService {
         );
     }
 
-    private SettlementRes getPendingSettlement(String creatorId, YearMonth yearMonth) {
+    private SettlementRes getPendingSettlement(String creatorId, String creatorName, YearMonth yearMonth) {
         String cacheKey = PENDING_CACHE_PREFIX + creatorId + ":" + yearMonth;
         SettlementRes cached = (SettlementRes) redisTemplate.opsForValue().get(cacheKey);
         if (cached != null) {
@@ -145,7 +146,7 @@ public class SettlementQueryService {
 
         SettlementCalculation calc = calculate(creatorId, yearMonth);
         SettlementRes result = new SettlementRes(
-                creatorId, yearMonth.toString(), SettlementStatus.PENDING,
+                creatorId, creatorName, yearMonth.toString(), SettlementStatus.PENDING,
                 calc.totalAmount(), calc.refundAmount(), calc.netAmount(),
                 calc.commissionRate(), calc.commissionAmount(), calc.settlementAmount(),
                 calc.sellCount(), calc.cancelCount()

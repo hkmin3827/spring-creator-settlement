@@ -3,13 +3,14 @@ package liveclass.creator_settlement.app.saleRecord.dto;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecord;
 import liveclass.creator_settlement.domain.saleRecord.constant.SaleRecordStatus;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record SaleRecordRes(
     String id,
     String courseId,
     String studentId,
-    Long amount,
+    BigDecimal amount,
     LocalDateTime paidAt,
     SaleRecordStatus status
 ) {

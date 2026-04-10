@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 
 public record SettlementRes(
     String creatorId,
+    String creatorName,
     String yearMonth,
     SettlementStatus status,
     BigDecimal totalAmount,
@@ -21,6 +22,7 @@ public record SettlementRes(
     public static SettlementRes from(Settlement settlement) {
         return new SettlementRes(
                 settlement.creatorId,
+                settlement.creatorName,
                 settlement.yearMonth,
                 settlement.status,
                 settlement.amount,
