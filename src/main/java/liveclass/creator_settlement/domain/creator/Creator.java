@@ -13,4 +13,11 @@ public class Creator {
 
     @Column(length = 30)
     public String name;
+
+    public static Creator of(String id, String name) {
+        Creator creator = new Creator();
+        creator.id = id;
+        creator.name = name;
+        return creator;
+    }
 }

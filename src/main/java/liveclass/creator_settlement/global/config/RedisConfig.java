@@ -22,10 +22,10 @@ public class RedisConfig {
     @Value("${spring.data.redis.database:1}")
     private int database;
 
-    @Value("${spring.data.redis.password}")
+    @Value("${spring.data.redis.password:}")
     private String password;
 
-    @Value("${spring.data.redis.username}")
+    @Value("${spring.data.redis.username:}")
     private String username;
 
 

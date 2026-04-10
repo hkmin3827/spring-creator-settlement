@@ -4,8 +4,11 @@ import jakarta.persistence.*;
 import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "settlements")
@@ -17,18 +20,67 @@ public class Settlement {
     @Enumerated(EnumType.STRING)
     public SettlementStatus status;
 
-    @Column(precision = 19, scale = 2)
+    @Column(name = "creator_id", nullable = false, updatable = false)
+    public String creatorId;
+
+    @Column(name = "year_month", nullable = false, length = 7, updatable = false)
+    public String yearMonth;
+
+    @Column(precision = 19, scale = 2, nullable = false)
     public BigDecimal amount;
 
-    @Column(precision = 19, scale = 2)
+    @Column(precision = 19, scale = 2, nullable = false)
     public BigDecimal netAmount;
 
-    @Column(precision = 19, scale = 2)
+    @Column(precision = 19, scale = 2, nullable = false)
     public BigDecimal refundAmount;
+
+    @Column(name = "commission_rate", precision = 5, scale = 4, nullable = false, updatable = false)
+    public BigDecimal commissionRate;
+
+    @Column(name = "commission_amount", precision = 19, scale = 2, nullable = false, updatable = false)
+    public BigDecimal commissionAmount;
+
+    @Column(name = "settlement_amount", precision = 19, scale = 2, nullable = false, updatable = false)
+    public BigDecimal settlementAmount;
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    public LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    public LocalDateTime updatedAt;
 
     // 수수료는 환경변수로 관리하여 변경 편의성확보하고 git 커밋 & 태그활용으로 이력 추적
     // 정산 예정 금액 서비스로직에서 계산 + redis 저장
-
     public long sellCount;
     public long cancelCount;
+
+
+    public static Settlement confirm(
+            String id, String creatorId, String yearMonth,
+            BigDecimal amount, BigDecimal refundAmount, BigDecimal netAmount,
+            BigDecimal commissionRate, BigDecimal commissionAmount, BigDecimal settlementAmount,
+            long sellCount, long cancelCount
+    ) {
+        Settlement s = new Settlement();
+        s.id = id;
+        s.creatorId = creatorId;
+        s.yearMonth = yearMonth;
+        s.status = SettlementStatus.CONFIRMED;
+        s.amount = amount;
+        s.refundAmount = refundAmount;
+        s.netAmount = netAmount;
+        s.commissionRate = commissionRate;
+        s.commissionAmount = commissionAmount;
+        s.settlementAmount = settlementAmount;
+        s.sellCount = sellCount;
+        s.cancelCount = cancelCount;
+        return s;
+    }
+
+    public void markAsPaid() {
+        this.status = SettlementStatus.PAID;
+    }
 }

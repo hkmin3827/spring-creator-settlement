@@ -6,11 +6,11 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Component
 public class IdGenerator {
-    private final AtomicLong saleRecordCounter = new AtomicLong();
-    private final AtomicLong courseCounter = new AtomicLong();
-    private final AtomicLong creatorCounter = new AtomicLong();
-    private final AtomicLong settlementCounter = new AtomicLong();
-    private final AtomicLong studentCounter = new AtomicLong();
+    private final AtomicLong saleRecordCounter = new AtomicLong(10);
+    private final AtomicLong courseCounter = new AtomicLong(10);
+    private final AtomicLong creatorCounter = new AtomicLong(10);
+    private final AtomicLong settlementCounter = new AtomicLong(10);
+    private final AtomicLong studentCounter = new AtomicLong(10);
 
     public String generateSaleRecordId() {
         return "sale-" + saleRecordCounter.getAndIncrement();

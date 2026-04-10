@@ -26,6 +26,7 @@ spring:
       host: localhost
       database: 1
       port: 6379
+      username:
       password:
       timeout: 1000ms
 

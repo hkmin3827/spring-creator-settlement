@@ -1,5 +1,8 @@
 package liveclass.creator_settlement.domain.vo;
 
+import liveclass.creator_settlement.global.exception.BusinessException;
+import liveclass.creator_settlement.global.exception.ErrorCode;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Objects;
@@ -24,7 +27,7 @@ public record Money(BigDecimal amount) implements Comparable<Money> {
     public Money subtract(Money other) {
         BigDecimal result = this.amount.subtract(other.amount);
         Objects.requireNonNull(other, "other money must not be null");
-//        if (result.compareTo(BigDecimal.ZERO) < 0) throw new CustomException(ErrorCode.INSUFFICIENT_DEPOSIT);
+        if (result.compareTo(BigDecimal.ZERO) < 0) throw new BusinessException(ErrorCode.INVALID_MONEY_ARITHMETIC);
         return new Money(result);
     }
     public Money multiply(long qty)   { return new Money(this.amount.multiply(BigDecimal.valueOf(qty))); }

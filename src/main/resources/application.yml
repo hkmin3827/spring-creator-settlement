@@ -7,3 +7,5 @@ spring:
     virtual:
       enabled: true
 
+app:
+  commission-rate: ${COMMISSION_RATE:0.20}

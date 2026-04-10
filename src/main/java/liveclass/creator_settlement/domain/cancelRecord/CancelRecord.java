@@ -18,12 +18,21 @@ public class CancelRecord {
     @Id
     public String id;
 
-    @Column(name = "sale_record_id")
+    @Column(name = "sale_record_id", nullable = false, updatable = false)
     public String saleRecordId;
 
-    @Column(scale = 2, precision = 19)
+    @Column(scale = 2, precision = 19, updatable = false)
     public BigDecimal refundAmount;
 
     @CreationTimestamp
+    @Column(nullable = false, updatable = false)
     public LocalDateTime cancelledAt;
+
+    public static CancelRecord of(String id, String saleRecordId, BigDecimal refundAmount, LocalDateTime cancelledAt) {
+        CancelRecord record = new CancelRecord();
+        record.id = id;
+        record.saleRecordId = saleRecordId;
+        record.refundAmount = refundAmount;
+        return record;
+    }
 }

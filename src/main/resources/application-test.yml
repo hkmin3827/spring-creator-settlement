@@ -23,12 +23,6 @@ spring:
       - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration
       - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchClientAutoConfiguration
 
-  elasticsearch:
-    uris: test.elastic
-
-  kafka:
-    bootstrap-servers: test.kafka
-
   data:
     redis:
       host: localhost
@@ -36,20 +30,10 @@ spring:
       password:
       database: 15
 
-  mail:
-    host: localhost
-    port: 2525
-    username: test-username
-    password: test-password
-
-jwt:
-  secret: test-secret-key-must-be-at-least-32-characters-long-for-hmac
-  expiration: 86400000
-
 logging:
   level:
     root: WARN
-    com.hakyung: INFO
+    liveclass.creator_settlement: INFO
     org.springframework.security: WARN
     org.hibernate.SQL: WARN
 app:
