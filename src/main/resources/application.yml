@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: creator-settlement
+  profiles:
+    active: local
+  threads:
+    virtual:
+      enabled: true
+

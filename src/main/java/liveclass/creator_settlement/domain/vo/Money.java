@@ -1,0 +1,38 @@
+package liveclass.creator_settlement.domain.vo;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Objects;
+
+public record Money(BigDecimal amount) implements Comparable<Money> {
+
+    public static final Money ZERO = new Money(BigDecimal.ZERO);
+
+    public Money {
+        if (amount == null) throw new IllegalArgumentException("amount must not be null");
+        amount = amount.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    public static Money of(long amount)          { return new Money(BigDecimal.valueOf(amount)); }
+    public static Money of(BigDecimal amount)    { return new Money(amount); }
+    public static Money of(String amount)        { return new Money(new BigDecimal(amount)); }
+
+    public Money add(Money other)    {
+        Objects.requireNonNull(other, "other money must not be null");
+        return new Money(this.amount.add(other.amount));
+    }
+    public Money subtract(Money other) {
+        BigDecimal result = this.amount.subtract(other.amount);
+        Objects.requireNonNull(other, "other money must not be null");
+//        if (result.compareTo(BigDecimal.ZERO) < 0) throw new CustomException(ErrorCode.INSUFFICIENT_DEPOSIT);
+        return new Money(result);
+    }
+    public Money multiply(long qty)   { return new Money(this.amount.multiply(BigDecimal.valueOf(qty))); }
+    public boolean isGreaterThanOrEqual(Money other) {
+        return this.amount.compareTo(other.amount) >= 0;
+    }
+    public boolean isPositive() { return this.amount.compareTo(BigDecimal.ZERO) > 0; }
+
+    @Override public int compareTo(Money o) { return this.amount.compareTo(o.amount); }
+    @Override public String toString()       { return amount.toPlainString(); }
+}
