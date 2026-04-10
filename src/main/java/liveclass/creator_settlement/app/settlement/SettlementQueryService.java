@@ -6,12 +6,16 @@ import liveclass.creator_settlement.app.creator.CreatorQueryService;
 import liveclass.creator_settlement.app.settlement.dto.CreatorAggregationDto;
 import liveclass.creator_settlement.domain.cancelRecord.CancelRecordRepository;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
+import liveclass.creator_settlement.domain.settlement.Settlement;
+import liveclass.creator_settlement.domain.settlement.SettlementLog;
+import liveclass.creator_settlement.domain.settlement.SettlementLogRepository;
 import liveclass.creator_settlement.domain.settlement.SettlementRepository;
 import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
 import liveclass.creator_settlement.domain.vo.Money;
+import liveclass.creator_settlement.global.exception.BusinessException;
+import liveclass.creator_settlement.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +24,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -31,20 +34,30 @@ public class SettlementQueryService {
     private BigDecimal commissionRate;
 
     private final SettlementRepository settlementRepository;
+    private final SettlementLogRepository settlementLogRepository;
     private final SaleRecordRepository saleRecordRepository;
     private final CancelRecordRepository cancelRecordRepository;
     private final CreatorQueryService creatorQueryService;
-    private final RedisTemplate<String, Object> redisTemplate;
-
-    private static final String PENDING_CACHE_PREFIX = "settlement:pending:";
-    private static final long CACHE_TTL_HOURS = 1;
 
     public SettlementRes getMonthlySettlement(String creatorId, YearMonth yearMonth) {
         String creatorName = creatorQueryService.getCreatorName(creatorId);
 
-        return settlementRepository.findByCreatorIdAndYearMonth(creatorId, yearMonth.toString())
-                .map(s -> SettlementRes.from(s, creatorName))
-                .orElseGet(() -> getPendingSettlement(creatorId, creatorName, yearMonth));
+        Optional<Settlement> settlementOpt = settlementRepository.findByCreatorIdAndYearMonth(creatorId, yearMonth.toString());
+
+        if (settlementOpt.isPresent()) {
+            Settlement settlement = settlementOpt.get();
+            SettlementLog log = settlementLogRepository.findBySettlementId(settlement.id)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND));
+            return SettlementRes.from(log, settlement.status, creatorName);
+        }
+
+        SettlementCalculation calc = calculate(creatorId, yearMonth);
+        return new SettlementRes(
+                creatorId, creatorName, yearMonth.toString(), SettlementStatus.PENDING,
+                calc.totalAmount(), calc.refundAmount(), calc.netAmount(),
+                calc.commissionRate(), calc.commissionAmount(), calc.expectedSettleAmount(),
+                calc.sellCount(), calc.cancelCount()
+        );
     }
 
     public AdminSettlementRes getAdminAggregate(LocalDate startDate, LocalDate endDate) {
@@ -131,29 +144,6 @@ public class SettlementQueryService {
                 sales.size(),
                 cancels.size()
         );
-    }
-
-    private SettlementRes getPendingSettlement(String creatorId, String creatorName, YearMonth yearMonth) {
-        String cacheKey = PENDING_CACHE_PREFIX + creatorId + ":" + yearMonth;
-        SettlementRes cached = (SettlementRes) redisTemplate.opsForValue().get(cacheKey);
-        if (cached != null) {
-            return cached;
-        }
-
-        SettlementCalculation calc = calculate(creatorId, yearMonth);
-        SettlementRes result = new SettlementRes(
-                creatorId, creatorName, yearMonth.toString(), SettlementStatus.PENDING,
-                calc.totalAmount(), calc.refundAmount(), calc.netAmount(),
-                calc.commissionRate(), calc.commissionAmount(), calc.expectedSettleAmount(),
-                calc.sellCount(), calc.cancelCount()
-        );
-
-        redisTemplate.opsForValue().set(cacheKey, result, CACHE_TTL_HOURS, TimeUnit.HOURS);
-        return result;
-    }
-
-    void evictPendingCache(String creatorId, YearMonth yearMonth) {
-        redisTemplate.delete(PENDING_CACHE_PREFIX + creatorId + ":" + yearMonth);
     }
 
     record SettlementCalculation(

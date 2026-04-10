@@ -7,15 +7,13 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(
         name = "settlements",
-        uniqueConstraints = @UniqueConstraint(
-                columnNames = {"creator_id", "year_month"}
-        ))
+        uniqueConstraints = @UniqueConstraint(columnNames = {"creator_id", "year_month"})
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Settlement {
     @Id
@@ -30,24 +28,6 @@ public class Settlement {
     @Column(name = "year_month", nullable = false, length = 7, updatable = false)
     public String yearMonth;
 
-    @Column(precision = 19, scale = 2, nullable = false)
-    public BigDecimal totalAmount;
-
-    @Column(precision = 19, scale = 2, nullable = false)
-    public BigDecimal netAmount;   //
-
-    @Column(precision = 19, scale = 2, nullable = false)
-    public BigDecimal refundAmount;
-
-    @Column(name = "commission_rate", precision = 5, scale = 4, nullable = false, updatable = false)
-    public BigDecimal commissionRate;
-
-    @Column(name = "commission_amount", precision = 19, scale = 2, nullable = false, updatable = false)
-    public BigDecimal commissionAmount;
-
-    @Column(name = "settlement_amount", precision = 19, scale = 2, nullable = false, updatable = false)
-    public BigDecimal expectedSettleAmount;
-
     @CreationTimestamp
     @Column(updatable = false)
     public LocalDateTime createdAt;
@@ -56,28 +36,12 @@ public class Settlement {
     @Column(name = "updated_at")
     public LocalDateTime updatedAt;
 
-    public long sellCount;
-    public long cancelCount;
-
-    public static Settlement confirm(
-            String id, String creatorId, String yearMonth,
-            BigDecimal totalAmount, BigDecimal refundAmount, BigDecimal netAmount,
-            BigDecimal commissionRate, BigDecimal commissionAmount, BigDecimal expectedSettleAmount,
-            long sellCount, long cancelCount
-    ) {
+    public static Settlement confirm(String id, String creatorId, String yearMonth) {
         Settlement s = new Settlement();
         s.id = id;
         s.creatorId = creatorId;
         s.yearMonth = yearMonth;
         s.status = SettlementStatus.CONFIRMED;
-        s.totalAmount = totalAmount;
-        s.refundAmount = refundAmount;
-        s.netAmount = netAmount;
-        s.commissionRate = commissionRate;
-        s.commissionAmount = commissionAmount;
-        s.expectedSettleAmount = expectedSettleAmount;
-        s.sellCount = sellCount;
-        s.cancelCount = cancelCount;
         return s;
     }
 

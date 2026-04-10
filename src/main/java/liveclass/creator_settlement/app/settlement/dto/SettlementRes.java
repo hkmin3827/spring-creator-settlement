@@ -1,6 +1,6 @@
 package liveclass.creator_settlement.app.settlement.dto;
 
-import liveclass.creator_settlement.domain.settlement.Settlement;
+import liveclass.creator_settlement.domain.settlement.SettlementLog;
 import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
 
 import java.math.BigDecimal;
@@ -12,27 +12,27 @@ public record SettlementRes(
     SettlementStatus status,
     BigDecimal totalAmount,
     BigDecimal refundAmount,
-    BigDecimal netAmount, // 순 판매 금액
-    BigDecimal commissionRate,  // 수수료
+    BigDecimal netAmount,
+    BigDecimal commissionRate,
     BigDecimal commissionAmount,
     BigDecimal expectedSettleAmount,
     long sellCount,
     long cancelCount
 ) {
-    public static SettlementRes from(Settlement settlement, String creatorName) {
+    public static SettlementRes from(SettlementLog log, SettlementStatus status, String creatorName) {
         return new SettlementRes(
-                settlement.creatorId,
+                log.creatorId,
                 creatorName,
-                settlement.yearMonth,
-                settlement.status,
-                settlement.totalAmount,
-                settlement.refundAmount,
-                settlement.netAmount,
-                settlement.commissionRate,
-                settlement.commissionAmount,
-                settlement.expectedSettleAmount,
-                settlement.sellCount,
-                settlement.cancelCount
+                log.yearMonth,
+                status,
+                log.totalAmount,
+                log.refundAmount,
+                log.netAmount,
+                log.commissionRate,
+                log.commissionAmount,
+                log.expectedSettleAmount,
+                log.sellCount,
+                log.cancelCount
         );
     }
 }

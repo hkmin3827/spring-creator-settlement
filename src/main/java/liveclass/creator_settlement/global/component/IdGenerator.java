@@ -10,6 +10,7 @@ public class IdGenerator {
     private final AtomicLong courseCounter = new AtomicLong(10);
     private final AtomicLong creatorCounter = new AtomicLong(10);
     private final AtomicLong settlementCounter = new AtomicLong(10);
+    private final AtomicLong settlementLogCounter = new AtomicLong(10);
     private final AtomicLong studentCounter = new AtomicLong(10);
 
     public String generateSaleRecordId() {
@@ -26,5 +27,8 @@ public class IdGenerator {
     }
     public String generateCancelRecordId() {
         return "cancel-" + saleRecordCounter.getAndIncrement();
+    }
+    public String generateSettlementLogId() {
+        return "settlement-log-" + settlementLogCounter.getAndIncrement();
     }
 }

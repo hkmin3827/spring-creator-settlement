@@ -23,13 +23,6 @@ spring:
       - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration
       - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchClientAutoConfiguration
 
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      password:
-      database: 15
-
 logging:
   level:
     root: WARN

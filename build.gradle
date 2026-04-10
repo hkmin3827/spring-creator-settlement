@@ -26,7 +26,6 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	compileOnly 'org.projectlombok:lombok'
 	testCompileOnly 'org.projectlombok:lombok'
@@ -35,8 +34,8 @@ dependencies {
 	implementation 'me.paulschwarz:spring-dotenv:5.0.1'
 
 	runtimeOnly 'org.postgresql:postgresql'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
-	testImplementation 'org.springframework.boot:spring-boot-starter-data-redis-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testAnnotationProcessor 'org.projectlombok:lombok'
@@ -52,8 +51,5 @@ dependencies {
 
 tasks.named('test') {
 	jvmArgs "-javaagent:${configurations.mockitoAgent.find { it.name.contains('mockito-core') }.absolutePath}"
-	jvmArgs "-Dfile.encoding=UTF-8"
-	jvmArgs "-Dstdout.encoding=UTF-8"
-	jvmArgs "-Dstderr.encoding=UTF-8"
 	useJUnitPlatform()
 }
