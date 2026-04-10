@@ -1,5 +1,6 @@
 package liveclass.creator_settlement.domain.cancelRecord;
 
+import liveclass.creator_settlement.app.settlement.dto.CreatorAggregationDto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,14 +25,16 @@ public interface CancelRecordRepository extends JpaRepository<CancelRecord, Stri
     );
 
     @Query("""
-        SELECT c.creatorId, SUM(cr.refundAmount), COUNT(cr.id)
+        SELECT new liveclass.creator_settlement.app.settlement.dto.CreatorAggregationDto(
+            c.creatorId, SUM(cr.refundAmount), COUNT(cr.id)
+        )
         FROM CancelRecord cr
         JOIN SaleRecord sr ON sr.id = cr.saleRecordId
         JOIN Course c ON c.id = sr.courseId
         WHERE cr.cancelledAt >= :start AND cr.cancelledAt <= :end
         GROUP BY c.creatorId
         """)
-    List<Object[]> aggregateCancelsByCreatorInRange(
+    List<CreatorAggregationDto> aggregateCancelsByCreatorInRange(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );

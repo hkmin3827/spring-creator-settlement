@@ -29,5 +29,3 @@ spring:
       username:
       password:
       timeout: 1000ms
-
-

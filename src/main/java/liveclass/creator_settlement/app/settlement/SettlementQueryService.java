@@ -3,6 +3,7 @@ package liveclass.creator_settlement.app.settlement;
 import liveclass.creator_settlement.app.settlement.dto.AdminSettlementRes;
 import liveclass.creator_settlement.app.settlement.dto.SettlementRes;
 import liveclass.creator_settlement.app.creator.CreatorQueryService;
+import liveclass.creator_settlement.app.settlement.dto.CreatorAggregationDto;
 import liveclass.creator_settlement.domain.cancelRecord.CancelRecordRepository;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
 import liveclass.creator_settlement.domain.settlement.SettlementRepository;
@@ -50,21 +51,21 @@ public class SettlementQueryService {
         var start = startDate.atStartOfDay();
         var end = endDate.atTime(LocalTime.MAX);
 
-        List<Object[]> saleAggregates = saleRecordRepository.aggregateSalesByCreatorInRange(start, end);
-        List<Object[]> cancelAggregates = cancelRecordRepository.aggregateCancelsByCreatorInRange(start, end);
+        List<CreatorAggregationDto> saleAggregates = saleRecordRepository.aggregateSalesByCreatorInRange(start, end);
+        List<CreatorAggregationDto> cancelAggregates = cancelRecordRepository.aggregateCancelsByCreatorInRange(start, end);
 
         Map<String, BigDecimal> saleTotals = new HashMap<>();
         Map<String, Long> saleCounts = new HashMap<>();
-        for (Object[] row : saleAggregates) {
-            saleTotals.put((String) row[0], (BigDecimal) row[1]);
-            saleCounts.put((String) row[0], (Long) row[2]);
+        for (CreatorAggregationDto row : saleAggregates) {
+            saleTotals.put(row.creatorId(), row.totalAmount());
+            saleCounts.put(row.creatorId(), row.count());
         }
 
         Map<String, BigDecimal> cancelTotals = new HashMap<>();
         Map<String, Long> cancelCounts = new HashMap<>();
-        for (Object[] row : cancelAggregates) {
-            cancelTotals.put((String) row[0], (BigDecimal) row[1]);
-            cancelCounts.put((String) row[0], (Long) row[2]);
+        for (CreatorAggregationDto row : cancelAggregates) {
+            cancelTotals.put(row.creatorId(), row.totalAmount());
+            cancelCounts.put(row.creatorId(), row.count());
         }
 
         var allCreatorIds = new HashSet<String>();

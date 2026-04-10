@@ -11,7 +11,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "settlements")
+@Table(
+        name = "settlements",
+        uniqueConstraints = @UniqueConstraint(
+                columnNames = {"creator_id", "year_month"}
+        ))
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Settlement {
     @Id

@@ -2,6 +2,7 @@ package liveclass.creator_settlement.domain.saleRecord;
 
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.QueryHint;
+import liveclass.creator_settlement.app.settlement.dto.CreatorAggregationDto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -39,12 +40,14 @@ public interface SaleRecordRepository extends JpaRepository<SaleRecord, String> 
     List<SaleRecord> findAllByCreatorId(@Param("creatorId") String creatorId);
 
     @Query("""
-        SELECT c.creatorId, SUM(sr.amount), COUNT(sr.id)
+        SELECT new liveclass.creator_settlement.app.settlement.dto.CreatorAggregationDto(
+            c.creatorId, SUM(sr.amount), COUNT(sr.id)
+        )
         FROM SaleRecord sr JOIN Course c ON c.id = sr.courseId
         WHERE sr.paidAt >= :start AND sr.paidAt <= :end
         GROUP BY c.creatorId
         """)
-    List<Object[]> aggregateSalesByCreatorInRange(
+    List<CreatorAggregationDto> aggregateSalesByCreatorInRange(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
