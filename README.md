@@ -82,14 +82,14 @@ PostgreSQL이 로컬에서 실행 중이어야 합니다.
 
 ## API 목록 및 예시
 
-모든 API는 URL 버전(`version = "v1"`)을 사용합니다.
+모든 API는 URL 버전(`version = "v1"`, path segment = 1)을 사용합니다.
 
 ### 판매 내역
 
 #### 판매 등록
 
 ```
-POST /api/sale-record
+POST /api/v1/sale-record
 Content-Type: application/json
 
 {
@@ -105,7 +105,7 @@ Content-Type: application/json
 #### 판매 내역 조회
 
 ```
-GET /api/sale-record?creatorId=creator-10&startDate=2025-03-01&endDate=2025-03-31
+GET /api/v1/sale-record?creatorId=creator-10&startDate=2025-03-01&endDate=2025-03-31
 ```
 
 - `startDate`, `endDate`는 선택값입니다. 없으면 해당 크리에이터의 전체 내역을 반환합니다.
@@ -117,7 +117,7 @@ GET /api/sale-record?creatorId=creator-10&startDate=2025-03-01&endDate=2025-03-3
 #### 취소(환불) 등록
 
 ```
-POST /api/cancel-record
+POST /api/v1/cancel-record
 Content-Type: application/json
 
 {
@@ -137,7 +137,7 @@ Content-Type: application/json
 #### 월별 정산 조회 (크리에이터)
 
 ```
-GET /api/settlement/creator/{creatorId}?yearMonth=2025-03
+GET /api/v1/settlement/creator/{creatorId}?yearMonth=2025-03
 ```
 
 응답:
@@ -166,7 +166,7 @@ GET /api/settlement/creator/{creatorId}?yearMonth=2025-03
 #### 정산 확정
 
 ```
-POST /api/settlement/confirm?creatorId=creator-10&yearMonth=2025-03
+POST /api/v1/settlement/confirm?creatorId=creator-10&yearMonth=2025-03
 ```
 
 - 해당 월이 완전히 종료되지 않으면 확정 불가 (`SETTLEMENT_MONTH_NOT_ENDED`)
@@ -175,7 +175,7 @@ POST /api/settlement/confirm?creatorId=creator-10&yearMonth=2025-03
 #### 지급 처리
 
 ```
-POST /api/settlement/{settlementId}/pay
+POST /api/v1/settlement/{settlementId}/pay
 ```
 
 - CONFIRMED 상태의 정산만 PAID로 전환 가능
@@ -184,7 +184,7 @@ POST /api/settlement/{settlementId}/pay
 #### 관리자 집계 조회
 
 ```
-GET /api/settlement/admin?startDate=2025-03-01&endDate=2025-03-31
+GET /api/v1/admin/settlement/admin?startDate=2025-03-01&endDate=2025-03-31
 ```
 
 응답:

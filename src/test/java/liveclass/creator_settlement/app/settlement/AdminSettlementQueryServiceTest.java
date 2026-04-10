@@ -1,0 +1,125 @@
+package liveclass.creator_settlement.app.settlement;
+
+import liveclass.creator_settlement.app.creator.CreatorQueryService;
+import liveclass.creator_settlement.app.settlement.dto.AdminSettlementRes;
+import liveclass.creator_settlement.app.settlement.dto.CreatorAggregationDto;
+import liveclass.creator_settlement.domain.cancelRecord.CancelRecordRepository;
+import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+
+@ExtendWith(MockitoExtension.class)
+class AdminSettlementQueryServiceTest {
+    @Mock
+    SaleRecordRepository saleRecordRepository;
+    @Mock
+    CancelRecordRepository cancelRecordRepository;
+    @Mock
+    CreatorQueryService creatorQueryService;
+    @InjectMocks
+    AdminSettlementQueryService adminSettlementQueryService;
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(adminSettlementQueryService, "commissionRate", new BigDecimal("0.20"));
+    }
+
+    @Test
+    void getAdminAggregate_판매_취소_집계_및_수수료_계산() {
+        given(saleRecordRepository.aggregateSalesByCreatorInRange(any(), any())).willReturn(List.of(
+                new CreatorAggregationDto("creator-1", new BigDecimal("500000"), 5L),
+                new CreatorAggregationDto("creator-2", new BigDecimal("200000"), 2L)
+        ));
+        given(cancelRecordRepository.aggregateCancelsByCreatorInRange(any(), any())).willReturn(List.of(
+                new CreatorAggregationDto("creator-1", new BigDecimal("100000"), 1L)
+        ));
+        given(creatorQueryService.getAllCreatorNames())
+                .willReturn(Map.of("creator-1", "홍길동", "creator-2", "김철수"));
+
+        AdminSettlementRes result = adminSettlementQueryService.getAdminAggregate(
+                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31)
+        );
+
+        assertThat(result.entries()).hasSize(2);
+
+        AdminSettlementRes.CreatorSettlementEntry creator1 = result.entries().stream()
+                .filter(e -> "creator-1".equals(e.creatorId()))
+                .findFirst().orElseThrow();
+
+        assertThat(creator1.creatorName()).isEqualTo("홍길동");
+        assertThat(creator1.totalAmount()).isEqualByComparingTo(new BigDecimal("500000"));
+        assertThat(creator1.refundAmount()).isEqualByComparingTo(new BigDecimal("100000"));
+        assertThat(creator1.netAmount()).isEqualByComparingTo(new BigDecimal("400000"));
+        assertThat(creator1.commissionAmount()).isEqualByComparingTo(new BigDecimal("80000.00"));
+        assertThat(creator1.expectedSettleAmount()).isEqualByComparingTo(new BigDecimal("320000.00"));
+        assertThat(creator1.sellCount()).isEqualTo(5L);
+        assertThat(creator1.cancelCount()).isEqualTo(1L);
+
+        AdminSettlementRes.CreatorSettlementEntry creator2 = result.entries().stream()
+                .filter(e -> "creator-2".equals(e.creatorId()))
+                .findFirst().orElseThrow();
+
+        assertThat(creator2.netAmount()).isEqualByComparingTo(new BigDecimal("200000"));
+        assertThat(creator2.expectedSettleAmount()).isEqualByComparingTo(new BigDecimal("160000.00"));
+        assertThat(creator2.cancelCount()).isEqualTo(0L);
+
+        assertThat(result.totalSettlementAmount()).isEqualByComparingTo(new BigDecimal("480000.00"));
+    }
+
+    @Test
+    void getAdminAggregate_판매내역_없는_크리에이터도_0으로_포함() {
+        given(saleRecordRepository.aggregateSalesByCreatorInRange(any(), any())).willReturn(List.of(
+                new CreatorAggregationDto("creator-1", new BigDecimal("300000"), 3L)
+        ));
+        given(cancelRecordRepository.aggregateCancelsByCreatorInRange(any(), any())).willReturn(List.<CreatorAggregationDto>of());
+        given(creatorQueryService.getAllCreatorNames())
+                .willReturn(Map.of("creator-1", "홍길동", "creator-2", "김철수"));
+
+        AdminSettlementRes result = adminSettlementQueryService.getAdminAggregate(
+                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31)
+        );
+
+        assertThat(result.entries()).hasSize(2);
+
+        AdminSettlementRes.CreatorSettlementEntry creator2 = result.entries().stream()
+                .filter(e -> "creator-2".equals(e.creatorId()))
+                .findFirst().orElseThrow();
+
+        assertThat(creator2.creatorName()).isEqualTo("김철수");
+        assertThat(creator2.totalAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(creator2.refundAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(creator2.netAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(creator2.commissionAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(creator2.expectedSettleAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(creator2.sellCount()).isEqualTo(0L);
+        assertThat(creator2.cancelCount()).isEqualTo(0L);
+    }
+
+    @Test
+    void getAdminAggregate_데이터_없으면_크리에이터만_0으로_반환() {
+        given(saleRecordRepository.aggregateSalesByCreatorInRange(any(), any())).willReturn(List.<CreatorAggregationDto>of());
+        given(cancelRecordRepository.aggregateCancelsByCreatorInRange(any(), any())).willReturn(List.<CreatorAggregationDto>of());
+        given(creatorQueryService.getAllCreatorNames()).willReturn(Map.of());
+
+        AdminSettlementRes result = adminSettlementQueryService.getAdminAggregate(
+                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31)
+        );
+
+        assertThat(result.entries()).isEmpty();
+        assertThat(result.totalSettlementAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+}

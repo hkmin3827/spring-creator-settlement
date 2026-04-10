@@ -2,6 +2,7 @@ package liveclass.creator_settlement.global.data;
 
 import liveclass.creator_settlement.domain.creator.CreatorRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.cache.Cache;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Order(2)
 @RequiredArgsConstructor
+@Slf4j
 public class CreatorCacheWarmup implements ApplicationRunner {
 
     private final CreatorRepository creatorRepository;
@@ -23,5 +25,6 @@ public class CreatorCacheWarmup implements ApplicationRunner {
         if (cache == null) return;
         creatorRepository.findAll()
                 .forEach(c -> cache.put(c.id, c.name));
+        log.info("Cache warmup complete.");
     }
 }

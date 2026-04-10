@@ -9,6 +9,6 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void configureApiVersioning(ApiVersionConfigurer configurer) {
-        configurer.usePathSegment(0).setVersionRequired(false);
+        configurer.usePathSegment(1).setVersionRequired(false);
     }
 }

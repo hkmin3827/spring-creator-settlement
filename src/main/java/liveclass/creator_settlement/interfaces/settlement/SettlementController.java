@@ -39,9 +39,4 @@ public class SettlementController {
     public SettlementRes markAsPaid(@PathVariable String settlementId) {
         return settlementService.markAsPaid(settlementId);
     }
-
-    @GetMapping(value = "/admin", version = "v1")
-    public AdminSettlementRes getAdminAggregate(@Valid @ModelAttribute AdminSettlementReq req) {
-        return settlementQueryService.getAdminAggregate(req.startDate(), req.endDate());
-    }
 }
