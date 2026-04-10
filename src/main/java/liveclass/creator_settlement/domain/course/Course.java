@@ -19,18 +19,16 @@ public class Course {
     @Column(name = "creator_id", nullable = false)
     public String creatorId;
 
-    @Column(name = "creator_name", nullable = false)
-    public String creatorName;
-
     @Column(length = 255)
     public String title;
 
-    @Column(precision = 8, scale =2)    // 최대 99만원
-    public BigDecimal price;
+    @Column(precision = 8, scale =2, nullable = false)    // 최대 99만원
+    public BigDecimal price = BigDecimal.ZERO;
 
-    public static Course of(String id, String creatorId, String title) {
+    public static Course of(String id, String creatorId, String title, BigDecimal price) {
         Course course = new Course();
         course.id = id;
+        course.price = price;
         course.creatorId = creatorId;
         course.title = title;
         return course;

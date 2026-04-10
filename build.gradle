@@ -45,9 +45,15 @@ dependencies {
 	testRuntimeOnly 'com.h2database:h2:2.3.232'
 	mockitoAgent 'org.mockito:mockito-core:5.20.0'
 
+	implementation 'com.github.ben-manes.caffeine:caffeine'
+	implementation 'org.springframework:spring-context-support'
+
 }
 
 tasks.named('test') {
 	jvmArgs "-javaagent:${configurations.mockitoAgent.find { it.name.contains('mockito-core') }.absolutePath}"
+	jvmArgs "-Dfile.encoding=UTF-8"
+	jvmArgs "-Dstdout.encoding=UTF-8"
+	jvmArgs "-Dstderr.encoding=UTF-8"
 	useJUnitPlatform()
 }

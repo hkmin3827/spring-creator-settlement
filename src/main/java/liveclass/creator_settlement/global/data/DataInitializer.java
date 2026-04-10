@@ -50,7 +50,8 @@ public class DataInitializer implements ApplicationRunner {
                 courseRepository.save(Course.of(
                     id,
                     node.get("creatorId").asString(),
-                    node.get("title").asString()
+                    node.get("title").asString(),
+                    node.get("price").asDecimal()
                 ));
             }
         }

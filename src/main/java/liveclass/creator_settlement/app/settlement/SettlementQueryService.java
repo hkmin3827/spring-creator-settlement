@@ -1,15 +1,13 @@
 package liveclass.creator_settlement.app.settlement;
 
-import liveclass.creator_settlement.app.settlement.dto.OperatorSettlementRes;
+import liveclass.creator_settlement.app.settlement.dto.AdminSettlementRes;
 import liveclass.creator_settlement.app.settlement.dto.SettlementRes;
+import liveclass.creator_settlement.app.creator.CreatorQueryService;
 import liveclass.creator_settlement.domain.cancelRecord.CancelRecordRepository;
-import liveclass.creator_settlement.domain.creator.CreatorRepository;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
 import liveclass.creator_settlement.domain.settlement.SettlementRepository;
 import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
 import liveclass.creator_settlement.domain.vo.Money;
-import liveclass.creator_settlement.global.exception.BusinessException;
-import liveclass.creator_settlement.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -34,50 +32,48 @@ public class SettlementQueryService {
     private final SettlementRepository settlementRepository;
     private final SaleRecordRepository saleRecordRepository;
     private final CancelRecordRepository cancelRecordRepository;
-    private final CreatorRepository creatorRepository;
+    private final CreatorQueryService creatorQueryService;
     private final RedisTemplate<String, Object> redisTemplate;
 
     private static final String PENDING_CACHE_PREFIX = "settlement:pending:";
     private static final long CACHE_TTL_HOURS = 1;
 
-    public SettlementRes getMonthlySettlement(String creatorId, String creatorName, YearMonth yearMonth) {
-        creatorRepository.findById(creatorId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CREATOR_NOT_FOUND));
+    public SettlementRes getMonthlySettlement(String creatorId, YearMonth yearMonth) {
+        String creatorName = creatorQueryService.getCreatorName(creatorId);
 
         return settlementRepository.findByCreatorIdAndYearMonth(creatorId, yearMonth.toString())
-                .map(SettlementRes::from)
+                .map(s -> SettlementRes.from(s, creatorName))
                 .orElseGet(() -> getPendingSettlement(creatorId, creatorName, yearMonth));
     }
 
-    public OperatorSettlementRes getOperatorAggregate(LocalDate startDate, LocalDate endDate) {
+    public AdminSettlementRes getAdminAggregate(LocalDate startDate, LocalDate endDate) {
         var start = startDate.atStartOfDay();
         var end = endDate.atTime(LocalTime.MAX);
 
         List<Object[]> saleAggregates = saleRecordRepository.aggregateSalesByCreatorInRange(start, end);
         List<Object[]> cancelAggregates = cancelRecordRepository.aggregateCancelsByCreatorInRange(start, end);
 
-        Map<String, String> creatorNames = new HashMap<>();
         Map<String, BigDecimal> saleTotals = new HashMap<>();
         Map<String, Long> saleCounts = new HashMap<>();
         for (Object[] row : saleAggregates) {
-            creatorNames.put((String) row[0], (String) row[1]);
-            saleTotals.put((String) row[0], (BigDecimal) row[2]);
-            saleCounts.put((String) row[0], (Long) row[3]);
+            saleTotals.put((String) row[0], (BigDecimal) row[1]);
+            saleCounts.put((String) row[0], (Long) row[2]);
         }
 
         Map<String, BigDecimal> cancelTotals = new HashMap<>();
         Map<String, Long> cancelCounts = new HashMap<>();
         for (Object[] row : cancelAggregates) {
-            creatorNames.putIfAbsent((String) row[0], (String) row[1]);
-            cancelTotals.put((String) row[0], (BigDecimal) row[2]);
-            cancelCounts.put((String) row[0], (Long) row[3]);
+            cancelTotals.put((String) row[0], (BigDecimal) row[1]);
+            cancelCounts.put((String) row[0], (Long) row[2]);
         }
 
         var allCreatorIds = new HashSet<String>();
         allCreatorIds.addAll(saleTotals.keySet());
         allCreatorIds.addAll(cancelTotals.keySet());
 
-        List<OperatorSettlementRes.CreatorSettlementEntry> entries = new ArrayList<>();
+        Map<String, String> creatorNames = creatorQueryService.getCreatorNames(allCreatorIds);
+
+        List<AdminSettlementRes.CreatorSettlementEntry> entries = new ArrayList<>();
         Money totalSettlement = Money.ZERO;
 
         for (String cId : allCreatorIds) {
@@ -89,7 +85,7 @@ public class SettlementQueryService {
 
             totalSettlement = totalSettlement.add(settlementAmount);
 
-            entries.add(new OperatorSettlementRes.CreatorSettlementEntry(
+            entries.add(new AdminSettlementRes.CreatorSettlementEntry(
                     cId,
                     creatorNames.get(cId),
                     totalAmount.amount(),
@@ -102,7 +98,7 @@ public class SettlementQueryService {
             ));
         }
 
-        return new OperatorSettlementRes(entries, totalSettlement.amount());
+        return new AdminSettlementRes(entries, totalSettlement.amount());
     }
 
     SettlementCalculation calculate(String creatorId, YearMonth yearMonth) {

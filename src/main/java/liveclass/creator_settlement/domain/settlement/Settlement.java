@@ -23,9 +23,6 @@ public class Settlement {
     @Column(name = "creator_id", nullable = false, updatable = false)
     public String creatorId;
 
-    @Column(name = "creator_name", nullable = false)
-    public String creatorName;
-
     @Column(name = "year_month", nullable = false, length = 7, updatable = false)
     public String yearMonth;
 
@@ -55,14 +52,11 @@ public class Settlement {
     @Column(name = "updated_at")
     public LocalDateTime updatedAt;
 
-    // 수수료는 환경변수로 관리하여 변경 편의성확보하고 git 커밋 & 태그활용으로 이력 추적
-    // 정산 예정 금액 서비스로직에서 계산 + redis 저장
     public long sellCount;
     public long cancelCount;
 
-
     public static Settlement confirm(
-            String id, String creatorId, String creatorName, String yearMonth,
+            String id, String creatorId, String yearMonth,
             BigDecimal amount, BigDecimal refundAmount, BigDecimal netAmount,
             BigDecimal commissionRate, BigDecimal commissionAmount, BigDecimal settlementAmount,
             long sellCount, long cancelCount
@@ -70,7 +64,6 @@ public class Settlement {
         Settlement s = new Settlement();
         s.id = id;
         s.creatorId = creatorId;
-        s.creatorName = creatorName;
         s.yearMonth = yearMonth;
         s.status = SettlementStatus.CONFIRMED;
         s.amount = amount;

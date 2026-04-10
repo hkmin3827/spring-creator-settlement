@@ -1,7 +1,7 @@
 package liveclass.creator_settlement.app.settlement;
 
+import liveclass.creator_settlement.app.creator.CreatorQueryService;
 import liveclass.creator_settlement.app.settlement.dto.SettlementRes;
-import liveclass.creator_settlement.domain.creator.CreatorRepository;
 import liveclass.creator_settlement.domain.settlement.Settlement;
 import liveclass.creator_settlement.domain.settlement.SettlementRepository;
 import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
@@ -21,14 +21,11 @@ import java.util.List;
 public class SettlementService {
 
     private final SettlementRepository settlementRepository;
-    private final CreatorRepository creatorRepository;
+    private final CreatorQueryService creatorQueryService;
     private final IdGenerator idGenerator;
     private final SettlementQueryService settlementQueryService;
 
-    public SettlementRes confirm(String creatorId, String creatorName, YearMonth yearMonth) {
-        creatorRepository.findById(creatorId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CREATOR_NOT_FOUND));
-
+    public SettlementRes confirm(String creatorId, YearMonth yearMonth) {
         boolean alreadyConfirmed = settlementRepository.existsByCreatorIdAndYearMonthAndStatusIn(
                 creatorId, yearMonth.toString(),
                 List.of(SettlementStatus.CONFIRMED, SettlementStatus.PAID)
@@ -43,7 +40,6 @@ public class SettlementService {
         Settlement settlement = Settlement.confirm(
                 idGenerator.generateSettlementId(),
                 creatorId,
-                creatorName,
                 yearMonth.toString(),
                 calc.totalAmount(),
                 calc.refundAmount(),
@@ -57,7 +53,8 @@ public class SettlementService {
 
         settlementQueryService.evictPendingCache(creatorId, yearMonth);
 
-        return SettlementRes.from(settlementRepository.save(settlement));
+        String creatorName = creatorQueryService.getCreatorName(creatorId);
+        return SettlementRes.from(settlementRepository.save(settlement), creatorName);
     }
 
     public SettlementRes markAsPaid(String settlementId) {
@@ -69,6 +66,7 @@ public class SettlementService {
         }
 
         settlement.markAsPaid();
-        return SettlementRes.from(settlement);
+        String creatorName = creatorQueryService.getCreatorName(settlement.creatorId);
+        return SettlementRes.from(settlement, creatorName);
     }
 }

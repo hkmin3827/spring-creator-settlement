@@ -19,10 +19,10 @@ public record SettlementRes(
     long sellCount,
     long cancelCount
 ) {
-    public static SettlementRes from(Settlement settlement) {
+    public static SettlementRes from(Settlement settlement, String creatorName) {
         return new SettlementRes(
                 settlement.creatorId,
-                settlement.creatorName,
+                creatorName,
                 settlement.yearMonth,
                 settlement.status,
                 settlement.amount,

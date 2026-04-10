@@ -24,12 +24,12 @@ public interface CancelRecordRepository extends JpaRepository<CancelRecord, Stri
     );
 
     @Query("""
-        SELECT c.creatorId, c.creatorName, SUM(cr.refundAmount), COUNT(cr.id)
+        SELECT c.creatorId, SUM(cr.refundAmount), COUNT(cr.id)
         FROM CancelRecord cr
         JOIN SaleRecord sr ON sr.id = cr.saleRecordId
         JOIN Course c ON c.id = sr.courseId
         WHERE cr.cancelledAt >= :start AND cr.cancelledAt <= :end
-        GROUP BY c.creatorId, c.creatorName
+        GROUP BY c.creatorId
         """)
     List<Object[]> aggregateCancelsByCreatorInRange(
             @Param("start") LocalDateTime start,

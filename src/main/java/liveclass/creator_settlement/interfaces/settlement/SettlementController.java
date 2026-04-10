@@ -3,8 +3,8 @@ package liveclass.creator_settlement.interfaces.settlement;
 import jakarta.validation.Valid;
 import liveclass.creator_settlement.app.settlement.SettlementQueryService;
 import liveclass.creator_settlement.app.settlement.SettlementService;
-import liveclass.creator_settlement.app.settlement.dto.OperatorSettlementReq;
-import liveclass.creator_settlement.app.settlement.dto.OperatorSettlementRes;
+import liveclass.creator_settlement.app.settlement.dto.AdminSettlementReq;
+import liveclass.creator_settlement.app.settlement.dto.AdminSettlementRes;
 import liveclass.creator_settlement.app.settlement.dto.SettlementRes;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +13,7 @@ import java.time.YearMonth;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/settlement")   // 컨트롤러 메서드 버저닝 적용 예정 ex. @POSTMAPPING(version="v1")
+@RequestMapping("/api/settlement")
 public class SettlementController {
 
     private final SettlementQueryService settlementQueryService;
@@ -22,19 +22,17 @@ public class SettlementController {
     @GetMapping(value = "/creator/{creatorId}", version = "v1")
     public SettlementRes getMonthlySettlement(
             @PathVariable String creatorId,
-            @RequestParam String creatorName,
             @RequestParam String yearMonth
     ) {
-        return settlementQueryService.getMonthlySettlement(creatorId, creatorName, YearMonth.parse(yearMonth));
+        return settlementQueryService.getMonthlySettlement(creatorId, YearMonth.parse(yearMonth));
     }
 
     @PostMapping(value = "/confirm", version = "v1")
     public SettlementRes confirm(
             @RequestParam String creatorId,
-            @RequestParam String creatorName,
             @RequestParam String yearMonth
     ) {
-        return settlementService.confirm(creatorId, creatorName, YearMonth.parse(yearMonth));
+        return settlementService.confirm(creatorId, YearMonth.parse(yearMonth));
     }
 
     @PostMapping(value = "/{settlementId}/pay", version = "v1")
@@ -42,8 +40,8 @@ public class SettlementController {
         return settlementService.markAsPaid(settlementId);
     }
 
-    @GetMapping(value = "/operator", version = "v1")
-    public OperatorSettlementRes getOperatorAggregate(@Valid @ModelAttribute OperatorSettlementReq req) {
-        return settlementQueryService.getOperatorAggregate(req.startDate(), req.endDate());
+    @GetMapping(value = "/admin", version = "v1")
+    public AdminSettlementRes getAdminAggregate(@Valid @ModelAttribute AdminSettlementReq req) {
+        return settlementQueryService.getAdminAggregate(req.startDate(), req.endDate());
     }
 }
