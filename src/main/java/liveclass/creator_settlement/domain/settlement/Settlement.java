@@ -36,16 +36,23 @@ public class Settlement {
     @Column(name = "updated_at")
     public LocalDateTime updatedAt;
 
-    public static Settlement confirm(String id, String creatorId, String yearMonth) {
+
+    public static Settlement create(String id, String creatorId, String yearMonth) {
         Settlement s = new Settlement();
         s.id = id;
         s.creatorId = creatorId;
         s.yearMonth = yearMonth;
-        s.status = SettlementStatus.CONFIRMED;
+
         return s;
+    }
+
+    public void confirm() {
+        this.status = SettlementStatus.CONFIRMED;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void markAsPaid() {
         this.status = SettlementStatus.PAID;
+        this.updatedAt = LocalDateTime.now();
     }
 }

@@ -42,22 +42,33 @@ public class SettlementQueryService {
     public SettlementRes getMonthlySettlement(String creatorId, YearMonth yearMonth) {
         String creatorName = creatorQueryService.getCreatorName(creatorId);
 
-        Optional<Settlement> settlementOpt = settlementRepository.findByCreatorIdAndYearMonth(creatorId, yearMonth.toString());
-
-        if (settlementOpt.isPresent()) {
-            Settlement settlement = settlementOpt.get();
-            SettlementLog log = settlementLogRepository.findBySettlementId(settlement.id)
-                    .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND));
-            return SettlementRes.from(log, settlement.status, creatorName);
+        // 현재 월 이후(현재 포함)는 항상 실시간 계산 — 배치 대상이 아님
+        if (!YearMonth.now().isAfter(yearMonth)) {
+            SettlementCalculation calc = calculate(creatorId, yearMonth);
+            return new SettlementRes(
+                    creatorId, creatorName, yearMonth.toString(), SettlementStatus.PENDING,
+                    calc.totalAmount(), calc.refundAmount(), calc.netAmount(),
+                    calc.commissionRate(), calc.commissionAmount(), calc.expectedSettleAmount(),
+                    calc.sellCount(), calc.cancelCount()
+            );
         }
 
-        SettlementCalculation calc = calculate(creatorId, yearMonth);
-        return new SettlementRes(
-                creatorId, creatorName, yearMonth.toString(), SettlementStatus.PENDING,
-                calc.totalAmount(), calc.refundAmount(), calc.netAmount(),
-                calc.commissionRate(), calc.commissionAmount(), calc.expectedSettleAmount(),
-                calc.sellCount(), calc.cancelCount()
-        );
+        // 과거 월: 배치가 완료됐으면 SettlementLog에서 반환, 아직 안 돌았으면 실시간 계산
+        return settlementRepository.findByCreatorIdAndYearMonth(creatorId, yearMonth.toString())
+                .map(settlement -> {
+                    SettlementLog log = settlementLogRepository.findBySettlementId(settlement.id)
+                            .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND));
+                    return SettlementRes.from(log, settlement.status, creatorName);
+                })
+                .orElseGet(() -> {
+                    SettlementCalculation calc = calculate(creatorId, yearMonth);
+                    return new SettlementRes(
+                            creatorId, creatorName, yearMonth.toString(), SettlementStatus.PENDING,
+                            calc.totalAmount(), calc.refundAmount(), calc.netAmount(),
+                            calc.commissionRate(), calc.commissionAmount(), calc.expectedSettleAmount(),
+                            calc.sellCount(), calc.cancelCount()
+                    );
+                });
     }
 
     public AdminSettlementRes getAdminAggregate(LocalDate startDate, LocalDate endDate) {

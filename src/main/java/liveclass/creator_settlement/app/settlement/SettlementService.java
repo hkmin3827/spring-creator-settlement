@@ -43,11 +43,12 @@ public class SettlementService {
 
         SettlementQueryService.SettlementCalculation calc = settlementQueryService.calculate(creatorId, yearMonth);
 
-        Settlement settlement = Settlement.confirm(
+        Settlement settlement = Settlement.create(
                 idGenerator.generateSettlementId(),
                 creatorId,
                 yearMonth.toString()
         );
+        settlement.confirm();
         settlementRepository.save(settlement);
 
         SettlementLog log = SettlementLog.of(
