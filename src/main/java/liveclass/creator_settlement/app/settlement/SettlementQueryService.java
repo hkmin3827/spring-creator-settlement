@@ -5,7 +5,6 @@ import liveclass.creator_settlement.app.settlement.dto.SettlementRes;
 import liveclass.creator_settlement.domain.cancelRecord.CancelRecordRepository;
 import liveclass.creator_settlement.domain.creator.CreatorRepository;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
-import liveclass.creator_settlement.domain.settlement.Settlement;
 import liveclass.creator_settlement.domain.settlement.SettlementRepository;
 import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
 import liveclass.creator_settlement.domain.vo.Money;

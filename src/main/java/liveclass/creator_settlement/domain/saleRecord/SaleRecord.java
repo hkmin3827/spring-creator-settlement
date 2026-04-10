@@ -32,7 +32,7 @@ public class SaleRecord {
     @Column(name="student_id", nullable = false)
     public String studentId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false, precision = 8, scale = 2)
     public BigDecimal amount;
 
     @CreationTimestamp

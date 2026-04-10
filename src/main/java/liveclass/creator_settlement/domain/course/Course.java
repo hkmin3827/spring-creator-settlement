@@ -25,7 +25,7 @@ public class Course {
     @Column(length = 255)
     public String title;
 
-    @Column(precision = 10, scale =2)
+    @Column(precision = 8, scale =2)    // 최대 99만원
     public BigDecimal price;
 
     public static Course of(String id, String creatorId, String title) {
