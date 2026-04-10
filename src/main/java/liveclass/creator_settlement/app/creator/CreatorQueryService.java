@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,8 +26,8 @@ public class CreatorQueryService {
                 .name;
     }
 
-    public Map<String, String> getCreatorNames(Set<String> creatorIds) {
-        return creatorRepository.findAllById(creatorIds)
+    public Map<String, String> getAllCreatorNames() {
+        return creatorRepository.findAll()
                 .stream()
                 .collect(Collectors.toMap(c -> c.id, c -> c.name));
     }

@@ -1,6 +1,7 @@
 package liveclass.creator_settlement.app.settlement;
 
 import liveclass.creator_settlement.app.creator.CreatorQueryService;
+import liveclass.creator_settlement.app.settlement.dto.SettlementCalculation;
 import liveclass.creator_settlement.app.settlement.dto.SettlementRes;
 import liveclass.creator_settlement.domain.settlement.Settlement;
 import liveclass.creator_settlement.domain.settlement.SettlementLog;
@@ -41,7 +42,7 @@ public class SettlementService {
             throw new BusinessException(ErrorCode.SETTLEMENT_ALREADY_EXISTS);
         }
 
-        SettlementQueryService.SettlementCalculation calc = settlementQueryService.calculate(creatorId, yearMonth);
+        SettlementCalculation calc = settlementQueryService.calculate(creatorId, yearMonth);
 
         Settlement settlement = Settlement.create(
                 idGenerator.generateSettlementId(),

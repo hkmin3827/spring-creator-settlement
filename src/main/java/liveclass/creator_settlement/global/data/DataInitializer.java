@@ -12,6 +12,7 @@ import liveclass.creator_settlement.domain.saleRecord.constant.SaleRecordStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Component
+@Order(1)
 @RequiredArgsConstructor
 public class DataInitializer implements ApplicationRunner {
 

@@ -1,12 +1,12 @@
 package liveclass.creator_settlement.app.settlement;
 
 import liveclass.creator_settlement.app.settlement.dto.AdminSettlementRes;
+import liveclass.creator_settlement.app.settlement.dto.SettlementCalculation;
 import liveclass.creator_settlement.app.settlement.dto.SettlementRes;
 import liveclass.creator_settlement.app.creator.CreatorQueryService;
 import liveclass.creator_settlement.app.settlement.dto.CreatorAggregationDto;
 import liveclass.creator_settlement.domain.cancelRecord.CancelRecordRepository;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
-import liveclass.creator_settlement.domain.settlement.Settlement;
 import liveclass.creator_settlement.domain.settlement.SettlementLog;
 import liveclass.creator_settlement.domain.settlement.SettlementLogRepository;
 import liveclass.creator_settlement.domain.settlement.SettlementRepository;
@@ -42,8 +42,11 @@ public class SettlementQueryService {
     public SettlementRes getMonthlySettlement(String creatorId, YearMonth yearMonth) {
         String creatorName = creatorQueryService.getCreatorName(creatorId);
 
-        // 현재 월 이후(현재 포함)는 항상 실시간 계산 — 배치 대상이 아님
-        if (!YearMonth.now().isAfter(yearMonth)) {
+        if (YearMonth.now().isBefore(yearMonth)) {
+            throw new BusinessException(ErrorCode.YEAR_MONTH_BAD_REQUEST);
+        }
+        // 현재 월은 항상 실시간 계산 — 배치 대상이 아님
+        if (YearMonth.now().equals(yearMonth)) {
             SettlementCalculation calc = calculate(creatorId, yearMonth);
             return new SettlementRes(
                     creatorId, creatorName, yearMonth.toString(), SettlementStatus.PENDING,
@@ -92,11 +95,8 @@ public class SettlementQueryService {
             cancelCounts.put(row.creatorId(), row.count());
         }
 
-        var allCreatorIds = new HashSet<String>();
-        allCreatorIds.addAll(saleTotals.keySet());
-        allCreatorIds.addAll(cancelTotals.keySet());
-
-        Map<String, String> creatorNames = creatorQueryService.getCreatorNames(allCreatorIds);
+        Map<String, String> creatorNames = creatorQueryService.getAllCreatorNames();
+        var allCreatorIds = creatorNames.keySet();
 
         List<AdminSettlementRes.CreatorSettlementEntry> entries = new ArrayList<>();
         Money totalSettlement = Money.ZERO;
@@ -156,15 +156,4 @@ public class SettlementQueryService {
                 cancels.size()
         );
     }
-
-    record SettlementCalculation(
-            BigDecimal totalAmount,
-            BigDecimal refundAmount,
-            BigDecimal netAmount,
-            BigDecimal commissionRate,
-            BigDecimal commissionAmount,
-            BigDecimal expectedSettleAmount,
-            long sellCount,
-            long cancelCount
-    ) {}
 }

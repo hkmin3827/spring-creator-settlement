@@ -1,0 +1,217 @@
+package liveclass.creator_settlement.app.settlement;
+
+import liveclass.creator_settlement.app.creator.CreatorQueryService;
+import liveclass.creator_settlement.app.settlement.dto.AdminSettlementRes;
+import liveclass.creator_settlement.app.settlement.dto.SettlementRes;
+import liveclass.creator_settlement.app.settlement.dto.CreatorAggregationDto;
+import liveclass.creator_settlement.domain.cancelRecord.CancelRecord;
+import liveclass.creator_settlement.domain.cancelRecord.CancelRecordRepository;
+import liveclass.creator_settlement.domain.saleRecord.SaleRecord;
+import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
+import liveclass.creator_settlement.domain.settlement.Settlement;
+import liveclass.creator_settlement.domain.settlement.SettlementLog;
+import liveclass.creator_settlement.domain.settlement.SettlementLogRepository;
+import liveclass.creator_settlement.domain.settlement.SettlementRepository;
+import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class SettlementQueryServiceTest {
+
+    @Mock SaleRecordRepository saleRecordRepository;
+    @Mock CancelRecordRepository cancelRecordRepository;
+    @Mock SettlementRepository settlementRepository;
+    @Mock SettlementLogRepository settlementLogRepository;
+    @Mock CreatorQueryService creatorQueryService;
+
+    @InjectMocks SettlementQueryService settlementQueryService;
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(settlementQueryService, "commissionRate", new BigDecimal("0.20"));
+    }
+
+    @Test
+    void getMonthlySettlement_CONFIRMED_정산_SettlementLog에서_반환() {
+        Settlement settlement = Settlement.create("settle-1", "creator-1", "2025-03");
+        settlement.confirm();
+        SettlementLog log = SettlementLog.of(
+                "log-1", "settle-1", "creator-1", "2025-03",
+                new BigDecimal("300000"), new BigDecimal("50000"), new BigDecimal("250000"),
+                new BigDecimal("0.20"), new BigDecimal("50000"), new BigDecimal("200000"),
+                3L, 1L
+        );
+
+        given(creatorQueryService.getCreatorName("creator-1")).willReturn("홍길동");
+        given(settlementRepository.findByCreatorIdAndYearMonth("creator-1", "2025-03"))
+                .willReturn(Optional.of(settlement));
+        given(settlementLogRepository.findBySettlementId("settle-1")).willReturn(Optional.of(log));
+
+        SettlementRes result = settlementQueryService.getMonthlySettlement("creator-1", YearMonth.of(2025, 3));
+
+        assertThat(result.status()).isEqualTo(SettlementStatus.CONFIRMED);
+        assertThat(result.creatorName()).isEqualTo("홍길동");
+        assertThat(result.totalAmount()).isEqualByComparingTo(new BigDecimal("300000"));
+        assertThat(result.refundAmount()).isEqualByComparingTo(new BigDecimal("50000"));
+        assertThat(result.netAmount()).isEqualByComparingTo(new BigDecimal("250000"));
+        assertThat(result.expectedSettleAmount()).isEqualByComparingTo(new BigDecimal("200000"));
+        verify(saleRecordRepository, never()).findByCreatorIdAndPaidAtBetween(any(), any(), any());
+    }
+
+    @Test
+    void getMonthlySettlement_PAID_정산_SettlementLog에서_반환() {
+        Settlement settlement = Settlement.create("settle-1", "creator-1", "2025-03");
+        settlement.confirm();
+        settlement.markAsPaid();
+
+        SettlementLog log = SettlementLog.of(
+                "log-1", "settle-1", "creator-1", "2025-03",
+                new BigDecimal("300000"), new BigDecimal("50000"), new BigDecimal("250000"),
+                new BigDecimal("0.20"), new BigDecimal("50000"), new BigDecimal("200000"),
+                3L, 1L
+        );
+
+        given(creatorQueryService.getCreatorName("creator-1")).willReturn("홍길동");
+        given(settlementRepository.findByCreatorIdAndYearMonth("creator-1", "2025-03"))
+                .willReturn(Optional.of(settlement));
+        given(settlementLogRepository.findBySettlementId("settle-1")).willReturn(Optional.of(log));
+
+        SettlementRes result = settlementQueryService.getMonthlySettlement("creator-1", YearMonth.of(2025, 3));
+
+        assertThat(result.status()).isEqualTo(SettlementStatus.PAID);
+        assertThat(result.creatorName()).isEqualTo("홍길동");
+        assertThat(result.totalAmount()).isEqualByComparingTo(new BigDecimal("300000"));
+        assertThat(result.expectedSettleAmount()).isEqualByComparingTo(new BigDecimal("200000"));
+        verify(saleRecordRepository, never()).findByCreatorIdAndPaidAtBetween(any(), any(), any());
+    }
+
+    @Test
+    void getMonthlySettlement_DB에_없으면_PENDING으로_계산하여_반환() {
+        SaleRecord sale1 = SaleRecord.of("sale-1", "course-1", "student-1", new BigDecimal("200000"), null);
+        SaleRecord sale2 = SaleRecord.of("sale-2", "course-1", "student-2", new BigDecimal("100000"), null);
+        CancelRecord cancel = CancelRecord.of("cancel-1", "sale-1", new BigDecimal("50000"), null);
+
+        given(creatorQueryService.getCreatorName("creator-1")).willReturn("홍길동");
+        given(settlementRepository.findByCreatorIdAndYearMonth("creator-1", "2025-03"))
+                .willReturn(Optional.empty());
+        given(saleRecordRepository.findByCreatorIdAndPaidAtBetween(eq("creator-1"), any(), any()))
+                .willReturn(List.of(sale1, sale2));
+        given(cancelRecordRepository.findByCreatorIdAndCancelledAtBetween(eq("creator-1"), any(), any()))
+                .willReturn(List.of(cancel));
+
+        SettlementRes result = settlementQueryService.getMonthlySettlement("creator-1", YearMonth.of(2025, 3));
+
+        assertThat(result.status()).isEqualTo(SettlementStatus.PENDING);
+        assertThat(result.creatorName()).isEqualTo("홍길동");
+        assertThat(result.totalAmount()).isEqualByComparingTo(new BigDecimal("300000"));
+        assertThat(result.refundAmount()).isEqualByComparingTo(new BigDecimal("50000"));
+        assertThat(result.netAmount()).isEqualByComparingTo(new BigDecimal("250000"));
+        assertThat(result.commissionAmount()).isEqualByComparingTo(new BigDecimal("50000.00"));
+        assertThat(result.expectedSettleAmount()).isEqualByComparingTo(new BigDecimal("200000.00"));
+        assertThat(result.sellCount()).isEqualTo(2L);
+        assertThat(result.cancelCount()).isEqualTo(1L);
+    }
+
+    @Test
+    void getAdminAggregate_판매_취소_집계_및_수수료_계산() {
+        given(saleRecordRepository.aggregateSalesByCreatorInRange(any(), any())).willReturn(List.of(
+                new CreatorAggregationDto("creator-1", new BigDecimal("500000"), 5L),
+                new CreatorAggregationDto("creator-2", new BigDecimal("200000"), 2L)
+        ));
+        given(cancelRecordRepository.aggregateCancelsByCreatorInRange(any(), any())).willReturn(List.of(
+                new CreatorAggregationDto("creator-1", new BigDecimal("100000"), 1L)
+        ));
+        given(creatorQueryService.getAllCreatorNames())
+                .willReturn(Map.of("creator-1", "홍길동", "creator-2", "김철수"));
+
+        AdminSettlementRes result = settlementQueryService.getAdminAggregate(
+                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31)
+        );
+
+        assertThat(result.entries()).hasSize(2);
+
+        AdminSettlementRes.CreatorSettlementEntry creator1 = result.entries().stream()
+                .filter(e -> "creator-1".equals(e.creatorId()))
+                .findFirst().orElseThrow();
+
+        assertThat(creator1.creatorName()).isEqualTo("홍길동");
+        assertThat(creator1.totalAmount()).isEqualByComparingTo(new BigDecimal("500000"));
+        assertThat(creator1.refundAmount()).isEqualByComparingTo(new BigDecimal("100000"));
+        assertThat(creator1.netAmount()).isEqualByComparingTo(new BigDecimal("400000"));
+        assertThat(creator1.commissionAmount()).isEqualByComparingTo(new BigDecimal("80000.00"));
+        assertThat(creator1.expectedSettleAmount()).isEqualByComparingTo(new BigDecimal("320000.00"));
+        assertThat(creator1.sellCount()).isEqualTo(5L);
+        assertThat(creator1.cancelCount()).isEqualTo(1L);
+
+        AdminSettlementRes.CreatorSettlementEntry creator2 = result.entries().stream()
+                .filter(e -> "creator-2".equals(e.creatorId()))
+                .findFirst().orElseThrow();
+
+        assertThat(creator2.netAmount()).isEqualByComparingTo(new BigDecimal("200000"));
+        assertThat(creator2.expectedSettleAmount()).isEqualByComparingTo(new BigDecimal("160000.00"));
+        assertThat(creator2.cancelCount()).isEqualTo(0L);
+
+        assertThat(result.totalSettlementAmount()).isEqualByComparingTo(new BigDecimal("480000.00"));
+    }
+
+    @Test
+    void getAdminAggregate_판매내역_없는_크리에이터도_0으로_포함() {
+        given(saleRecordRepository.aggregateSalesByCreatorInRange(any(), any())).willReturn(List.of(
+                new CreatorAggregationDto("creator-1", new BigDecimal("300000"), 3L)
+        ));
+        given(cancelRecordRepository.aggregateCancelsByCreatorInRange(any(), any())).willReturn(List.<CreatorAggregationDto>of());
+        given(creatorQueryService.getAllCreatorNames())
+                .willReturn(Map.of("creator-1", "홍길동", "creator-2", "김철수"));
+
+        AdminSettlementRes result = settlementQueryService.getAdminAggregate(
+                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31)
+        );
+
+        assertThat(result.entries()).hasSize(2);
+
+        AdminSettlementRes.CreatorSettlementEntry creator2 = result.entries().stream()
+                .filter(e -> "creator-2".equals(e.creatorId()))
+                .findFirst().orElseThrow();
+
+        assertThat(creator2.creatorName()).isEqualTo("김철수");
+        assertThat(creator2.totalAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(creator2.refundAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(creator2.netAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(creator2.commissionAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(creator2.expectedSettleAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(creator2.sellCount()).isEqualTo(0L);
+        assertThat(creator2.cancelCount()).isEqualTo(0L);
+    }
+
+    @Test
+    void getAdminAggregate_데이터_없으면_크리에이터만_0으로_반환() {
+        given(saleRecordRepository.aggregateSalesByCreatorInRange(any(), any())).willReturn(List.<CreatorAggregationDto>of());
+        given(cancelRecordRepository.aggregateCancelsByCreatorInRange(any(), any())).willReturn(List.<CreatorAggregationDto>of());
+        given(creatorQueryService.getAllCreatorNames()).willReturn(Map.of());
+
+        AdminSettlementRes result = settlementQueryService.getAdminAggregate(
+                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31)
+        );
+
+        assertThat(result.entries()).isEmpty();
+        assertThat(result.totalSettlementAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+}
