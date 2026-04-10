@@ -14,7 +14,7 @@ public record AdminSettlementRes(
         BigDecimal refundAmount,
         BigDecimal netAmount,
         BigDecimal commissionAmount,
-        BigDecimal settlementAmount,
+        BigDecimal expectedSettleAmount,
         long sellCount,
         long cancelCount
     ) {}

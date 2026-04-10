@@ -15,7 +15,7 @@ public record SettlementRes(
     BigDecimal netAmount, // 순 판매 금액
     BigDecimal commissionRate,  // 수수료
     BigDecimal commissionAmount,
-    BigDecimal settlementAmount,
+    BigDecimal expectedSettleAmount,
     long sellCount,
     long cancelCount
 ) {
@@ -25,12 +25,12 @@ public record SettlementRes(
                 creatorName,
                 settlement.yearMonth,
                 settlement.status,
-                settlement.amount,
+                settlement.totalAmount,
                 settlement.refundAmount,
                 settlement.netAmount,
                 settlement.commissionRate,
                 settlement.commissionAmount,
-                settlement.settlementAmount,
+                settlement.expectedSettleAmount,
                 settlement.sellCount,
                 settlement.cancelCount
         );

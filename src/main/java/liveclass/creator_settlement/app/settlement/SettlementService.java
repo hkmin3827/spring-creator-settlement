@@ -46,7 +46,7 @@ public class SettlementService {
                 calc.netAmount(),
                 calc.commissionRate(),
                 calc.commissionAmount(),
-                calc.settlementAmount(),
+                calc.expectedSettleAmount(),
                 calc.sellCount(),
                 calc.cancelCount()
         );

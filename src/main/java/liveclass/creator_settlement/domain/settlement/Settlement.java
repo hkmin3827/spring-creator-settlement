@@ -27,10 +27,10 @@ public class Settlement {
     public String yearMonth;
 
     @Column(precision = 19, scale = 2, nullable = false)
-    public BigDecimal amount;
+    public BigDecimal totalAmount;
 
     @Column(precision = 19, scale = 2, nullable = false)
-    public BigDecimal netAmount;
+    public BigDecimal netAmount;   //
 
     @Column(precision = 19, scale = 2, nullable = false)
     public BigDecimal refundAmount;
@@ -42,7 +42,7 @@ public class Settlement {
     public BigDecimal commissionAmount;
 
     @Column(name = "settlement_amount", precision = 19, scale = 2, nullable = false, updatable = false)
-    public BigDecimal settlementAmount;
+    public BigDecimal expectedSettleAmount;
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -57,8 +57,8 @@ public class Settlement {
 
     public static Settlement confirm(
             String id, String creatorId, String yearMonth,
-            BigDecimal amount, BigDecimal refundAmount, BigDecimal netAmount,
-            BigDecimal commissionRate, BigDecimal commissionAmount, BigDecimal settlementAmount,
+            BigDecimal totalAmount, BigDecimal refundAmount, BigDecimal netAmount,
+            BigDecimal commissionRate, BigDecimal commissionAmount, BigDecimal expectedSettleAmount,
             long sellCount, long cancelCount
     ) {
         Settlement s = new Settlement();
@@ -66,12 +66,12 @@ public class Settlement {
         s.creatorId = creatorId;
         s.yearMonth = yearMonth;
         s.status = SettlementStatus.CONFIRMED;
-        s.amount = amount;
+        s.totalAmount = totalAmount;
         s.refundAmount = refundAmount;
         s.netAmount = netAmount;
         s.commissionRate = commissionRate;
         s.commissionAmount = commissionAmount;
-        s.settlementAmount = settlementAmount;
+        s.expectedSettleAmount = expectedSettleAmount;
         s.sellCount = sellCount;
         s.cancelCount = cancelCount;
         return s;

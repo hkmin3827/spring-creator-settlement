@@ -81,9 +81,9 @@ public class SettlementQueryService {
             Money refundAmount = Money.of(cancelTotals.getOrDefault(cId, BigDecimal.ZERO));
             Money netAmount = totalAmount.subtract(refundAmount);
             Money commissionAmount = Money.of(netAmount.amount().multiply(commissionRate));
-            Money settlementAmount = netAmount.subtract(commissionAmount);
+            Money expectedSettleAmount = netAmount.subtract(commissionAmount);
 
-            totalSettlement = totalSettlement.add(settlementAmount);
+            totalSettlement = totalSettlement.add(expectedSettleAmount);
 
             entries.add(new AdminSettlementRes.CreatorSettlementEntry(
                     cId,
@@ -92,7 +92,7 @@ public class SettlementQueryService {
                     refundAmount.amount(),
                     netAmount.amount(),
                     commissionAmount.amount(),
-                    settlementAmount.amount(),
+                    expectedSettleAmount.amount(),
                     saleCounts.getOrDefault(cId, 0L),
                     cancelCounts.getOrDefault(cId, 0L)
             ));
@@ -143,7 +143,7 @@ public class SettlementQueryService {
         SettlementRes result = new SettlementRes(
                 creatorId, creatorName, yearMonth.toString(), SettlementStatus.PENDING,
                 calc.totalAmount(), calc.refundAmount(), calc.netAmount(),
-                calc.commissionRate(), calc.commissionAmount(), calc.settlementAmount(),
+                calc.commissionRate(), calc.commissionAmount(), calc.expectedSettleAmount(),
                 calc.sellCount(), calc.cancelCount()
         );
 
@@ -161,7 +161,7 @@ public class SettlementQueryService {
             BigDecimal netAmount,
             BigDecimal commissionRate,
             BigDecimal commissionAmount,
-            BigDecimal settlementAmount,
+            BigDecimal expectedSettleAmount,
             long sellCount,
             long cancelCount
     ) {}
