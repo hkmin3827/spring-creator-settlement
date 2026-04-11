@@ -249,7 +249,7 @@ Settlement (월별 정산 마커, creator_id + year_month unique)
 - **판매 금액 제약**: `@Digits(integer=6, fraction=2)` + DB `precision=8, scale=2`로 최대 999,999.99원으로 제한합니다. 실제 강의료는 price 컬럼 기준 최대 99만원으로 간주합니다.
 - **크리에이터 이름 조회**: 정산 엔티티에 이름을 저장하지 않고, 응답 시점에 캐시(`Caffeine`)를 통해 조회합니다.
 - **정산 PENDING 상태**: DB에 별도 레코드를 생성하지 않고, 조회 시 실시간으로 계산하여 반환합니다.
-- **ID 생성**: `AtomicLong` 기반 `IdGenerator`를 사용하며 재시작 시 초기화됩니다. 운영 환경에서는 UUID 또는 별도 채번 전략으로 교체가 필요합니다.
+- **ID 생성**: `AtomicLong` 기반 `IdGenerator`를 사용하여 String값을 생성합니다. 재시작 시 초기화됩니다. 운영 환경에서는 UUID로 변경필요합니다.
 
 ---
 
@@ -316,34 +316,27 @@ userName **Spring Caffeine Cache** 이용한 캐싱 전략으로 변경
 
 
 
-### 3. 월말 배치 스케줄러 설계 고려 (미구현, 구조 반영)
+### 3. 월말 배치 스케줄러 설계 (구현 예정)
 
-정산 시스템의 실무 흐름은 **월초 배치로 전월 전체 크리에이터를 일괄 confirm**하는 방식이 적합합니다.  
-0원 크리에이터도 포함해야 감사 추적이 가능하고, 관리자가 "이번 달 정산 대상 전체 목록"을 뽑을 수 있습니다.
+**월초 배치로 전월 전체 크리에이터를 일괄 confirm**하는 방식을 사용합니다.
+판매금액 0원 크리에이터도 포함해야 감사 추적이 가능하고, 관리자가 "이번 달 정산 대상 전체 목록"을 뽑을 수 있습니다.
 
-현재 `confirm()` API는 배치에서 반복 호출하는 것을 전제로 설계되어 있으며, 스케줄러 코드만 추가하면 됩니다. 현재 월 조회는 배치와 무관하게 항상 실시간 계산을 반환합니다.
+현재 `confirm()` API는 배치에서 반복 호출하는 것을 전제로 설계되어 있으며, 현재 월 조회는 배치와 무관하게 항상 실시간 계산을 반환합니다.
 
 ### 4. 정산 확정(confirm) 시 당월 종료 여부 체크
 
 `YearMonth.now().isAfter(targetYearMonth)` 조건으로 당월 또는 미래 월 확정을 차단. 아직 판매가 발생할 수 있는 월을 확정하면 이후 거래가 누락될 수 있기 때문.
 
-### 5. SettlementQueryService.calculate()를 SettlementService에서 직접 호출
 
-`calculate()`는 패키지 프라이빗 메서드로 선언. `SettlementService`와 동일 패키지에 위치하므로 접근 가능. confirm과 markAsPaid 모두 계산 로직을 재사용하기 위해 서비스 레이어 간 직접 호출.
-
-### 6. Object[] 대신 JPQL 생성자 표현식으로 타입 안전한 집계 DTO 사용
+### 5. Object[] 대신 JPQL 생성자 표현식으로 타입 안전한 집계 DTO 사용
 
 초기 구현에서 JPQL 집계 쿼리 결과를 `Object[]`로 처리. `CreatorAggregationDto(String creatorId, BigDecimal totalAmount, Long count)` 레코드를 선언하고 JPQL `SELECT new ...()` 생성자 표현식으로 직접 매핑하도록 변경. 캐스팅 오류 위험 제거.
 
-### 7. 크리에이터 이름 조회 — 루프 내 단건 호출 → 벌크 조회로 변경
+### 6. 크리에이터 이름 조회 — 루프 내 단건 호출 → 벌크 조회로 변경
 
 관리자 집계 API(`getAdminAggregate`)에서 크리에이터별로 루프를 돌며 `getCreatorName(creatorId)`를 반복 호출하는 N+1 구조를 `getCreatorNames(Set<String>)`로 교체. `findAllById`로 한 번에 조회 후 Map으로 변환.
 
-### 8. Caffeine 캐시와 @EnableCaching 위치
-
-`@DataJpaTest` 슬라이스 컨텍스트에서 `@SpringBootApplication`에 `@EnableCaching`이 붙어 있으면 캐시 관련 빈이 로드되지 않아 오류가 발생. `@EnableCaching`을 `CacheConfig`로 이동하여 슬라이스 테스트와 캐시 설정을 분리.
-
-### 9. SettlementReq DTO 제거 — @RequestParam 직접 수신
+### 7. SettlementReq DTO 제거 — @RequestParam 직접 수신
 
 `confirm()` API가 `@RequestBody`로 DTO를 받는 구조에서 `@RequestParam`으로 변경. `yearMonth` 같은 단일 값들을 위해 별도 DTO를 만드는 것은 과한 추상화이며, `@RequestParam`으로 직접 받아 `YearMonth.parse()`로 변환하는 것이 더 간결.
 
@@ -354,8 +347,7 @@ userName **Spring Caffeine Cache** 이용한 캐싱 전략으로 변경
 - **크리에이터/강의 등록 API 없음**: 초기 데이터는 `DataInitializer`(서버 시작 시 더미 데이터 삽입)로만 제공됩니다.
 - **SaleRecord PAID, CANCELLED로 상태 제한**: 결제 실패로 인한 판매 시도 이력을 저장 하려면 FAILED와 같은 값을 추가하면 좋겠으나, 결제 로직의 구조가 제시되지 않아 결제 확정 시 호출로 가정하고 paidAt을 생성시점에 stamp 되도록 하였습니다. 
 - **IdGenerator 재시작 시 초기화**: 운영 환경에서는 UUID 또는 DB 시퀀스 기반 ID 전략 교체가 필요합니다.
-- **SettlementLog 환불 후 수정 API 없음**: 설계는 되어 있으나 실제 수정 API는 구현되지 않았습니다.
-- **커미션율 변경 이력 관리**: 환경변수로만 관리하며, git 태그 기반 이력 추적은 운영 규약으로만 존재합니다.
+- **수수료 변경 이력 관리**: application.yml에서 불러와서 사용하며, git 태그 기반 이력 추적은 운영 규약으로만 존재합니다.
 
 ---
 
