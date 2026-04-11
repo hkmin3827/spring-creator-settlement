@@ -40,6 +40,7 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testAnnotationProcessor 'org.projectlombok:lombok'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-batch'
 
 	testRuntimeOnly 'com.h2database:h2:2.3.232'
 	mockitoAgent 'org.mockito:mockito-core:5.20.0'

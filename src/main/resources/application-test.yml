@@ -17,6 +17,10 @@ spring:
         format_sql: false
         show_sql: false
 
+  batch:
+    jdbc:
+      initialize-schema: always
+
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration

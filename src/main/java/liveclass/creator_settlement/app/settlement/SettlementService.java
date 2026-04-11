@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.YearMonth;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -29,6 +31,10 @@ public class SettlementService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public String createPending(String creatorId, String yearMonth) {
+        if (!YearMonth.now().isAfter(YearMonth.parse(yearMonth))) {
+            throw new BusinessException(ErrorCode.YEAR_MONTH_BAD_REQUEST);
+        }
+
         if (settlementRepository.existsByCreatorIdAndYearMonth(
                 creatorId, yearMonth)) {
             throw new BusinessException(ErrorCode.SETTLEMENT_ALREADY_EXISTS);

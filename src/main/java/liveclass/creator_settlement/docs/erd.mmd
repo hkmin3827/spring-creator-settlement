@@ -1,0 +1,56 @@
+erDiagram
+    CREATOR ||--o{ COURSE : "creates"
+    CREATOR ||--o{ SETTLEMENT : "has"
+    COURSE ||--o{ SALE_RECORD : "has"
+    SALE_RECORD ||--o| CANCEL_RECORD : "has"
+    SETTLEMENT ||--o| SETTLEMENT_LOG : "generates"
+
+    CREATOR {
+        String id PK
+        String name
+    }
+    COURSE {
+        String id PK
+        String creator_id FK
+        String title
+        BigDecimal price
+    }
+    SALE_RECORD {
+        String id PK
+        String course_id FK
+        String student_id
+        String status
+        BigDecimal amount
+        LocalDateTime paid_at
+    }
+    CANCEL_RECORD {
+        String id PK
+        String sale_record_id FK
+        BigDecimal refund_amount
+        LocalDateTime cancelled_at
+    }
+    SETTLEMENT {
+        String id PK
+        String creator_id FK
+        String status
+        String year_month
+        LocalDateTime created_at
+        LocalDateTime updated_at
+        Long version
+    }
+    SETTLEMENT_LOG {
+        String id PK
+        String settlement_id FK
+        String creator_id
+        String year_month
+        BigDecimal total_amount
+        BigDecimal refund_amount
+        BigDecimal net_amount
+        BigDecimal commission_rate
+        BigDecimal commission_amount
+        BigDecimal expected_settle_amount
+        long sell_count
+        long cancel_count
+        LocalDateTime confirmed_at
+        LocalDateTime paid_at
+    }

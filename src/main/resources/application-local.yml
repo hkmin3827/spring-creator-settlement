@@ -21,3 +21,7 @@ spring:
         show_sql: true
     open-in-view: false
 
+  batch:
+    jdbc:
+      initialize-schema: always
+

@@ -3,9 +3,14 @@ spring:
     name: creator-settlement
   profiles:
     active: local
+
   threads:
     virtual:
       enabled: true
+
+  batch:
+    job:
+      enabled: false
 
 app:
   commission-rate: ${COMMISSION_RATE:0.20}
