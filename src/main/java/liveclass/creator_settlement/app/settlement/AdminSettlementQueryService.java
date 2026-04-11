@@ -67,19 +67,16 @@ public class AdminSettlementQueryService {
 
             totalSettlement = totalSettlement.add(expectedSettleAmount);
 
-            entries.add(new AdminSettlementRes.CreatorSettlementEntry(
+            entries.add(AdminSettlementRes.CreatorSettlementEntry.of(
                     cId,
                     creatorNames.get(cId),
-                    totalAmount.amount(),
-                    refundAmount.amount(),
-                    netAmount.amount(),
-                    commissionAmount.amount(),
-                    expectedSettleAmount.amount(),
+                    totalAmount, refundAmount, netAmount,
+                    commissionAmount, expectedSettleAmount,
                     saleCounts.getOrDefault(cId, 0L),
                     cancelCounts.getOrDefault(cId, 0L)
             ));
         }
 
-        return new AdminSettlementRes(entries, totalSettlement.amount());
+        return AdminSettlementRes.from(entries, totalSettlement);
     }
 }
