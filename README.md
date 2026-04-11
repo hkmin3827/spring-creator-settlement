@@ -256,6 +256,7 @@ Settlement (월별 정산 마커, creator_id + year_month unique)
 ## 설계 결정과 이유
 
 ### 1. Settlement 아키텍처 진화 — 금액 직접 저장 → 마커 + SettlementLog 스냅샷
+#### * 아키텍쳐 전환 규모가 커서 branch 분리하여 개발 후 병합하였습니다.
 
 #### 초기 설계
 

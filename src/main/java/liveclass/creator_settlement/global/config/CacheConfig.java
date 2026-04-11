@@ -20,7 +20,7 @@ public class CacheConfig {
                 new CaffeineCache(
                         "creator-name",
                         Caffeine.newBuilder()
-                                .maximumSize(99999999)
+                                .maximumSize(1000000)
                                 .build()
                 );
 
