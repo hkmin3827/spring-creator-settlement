@@ -5,9 +5,9 @@ import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+
 
 @Entity
 @Table(
@@ -32,13 +32,15 @@ public class Settlement {
     @Column(updatable = false)
     public LocalDateTime createdAt;
 
-    @UpdateTimestamp
     @Column(name = "updated_at")
     public LocalDateTime updatedAt;
 
+    @Version
+    public Long version;
 
     public static Settlement create(String id, String creatorId, String yearMonth) {
         Settlement s = new Settlement();
+        s.status = SettlementStatus.PENDING;
         s.id = id;
         s.creatorId = creatorId;
         s.yearMonth = yearMonth;

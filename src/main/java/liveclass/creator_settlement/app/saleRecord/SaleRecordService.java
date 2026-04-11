@@ -2,6 +2,7 @@ package liveclass.creator_settlement.app.saleRecord;
 
 import liveclass.creator_settlement.app.saleRecord.dto.SaleRecordCreateReq;
 import liveclass.creator_settlement.app.saleRecord.dto.SaleRecordRes;
+import liveclass.creator_settlement.domain.course.Course;
 import liveclass.creator_settlement.domain.course.CourseRepository;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecord;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
@@ -27,8 +28,12 @@ public class SaleRecordService {
     private final IdGenerator idGenerator;
 
     public SaleRecordRes register(SaleRecordCreateReq req) {
-        courseRepository.findById(req.courseId())
+        Course course = courseRepository.findById(req.courseId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.COURSE_NOT_FOUND));
+
+        if(req.amount().compareTo(course.price) > 0) {
+            throw new BusinessException(ErrorCode.INVALID_SALE_RECORD_AMOUNT);
+        }
 
         SaleRecord saleRecord = SaleRecord.of(
                 idGenerator.generateSaleRecordId(),

@@ -11,4 +11,6 @@ public interface SettlementRepository extends JpaRepository<Settlement, String> 
     boolean existsByCreatorIdAndYearMonthAndStatusIn(
             String creatorId, String yearMonth, java.util.List<SettlementStatus> statuses
     );
+
+    boolean existsByCreatorIdAndYearMonth(String creatorId, String yearMonth);
 }

@@ -9,14 +9,17 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "settlement_logs")
+@Table(
+        name = "settlement_logs",
+        uniqueConstraints = @UniqueConstraint(name = "uk_settlement_log_creator_year_month",columnNames = {"creator_id", "year_month"})
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SettlementLog {
 
     @Id
     public String id;
 
-    @Column(name = "settlement_id", nullable = false, updatable = false)
+    @Column(name = "settlement_id", nullable = false, updatable = false, unique = true)
     public String settlementId;
 
     @Column(name = "creator_id", nullable = false, updatable = false)
@@ -26,31 +29,33 @@ public class SettlementLog {
     public String yearMonth;
 
     @Column(name = "total_amount", nullable = false, updatable = false, precision = 8, scale = 2)
-    public BigDecimal totalAmount;
+    public BigDecimal totalAmount = BigDecimal.ZERO;
 
     @Column(name = "refund_amount", nullable = false, precision = 8, scale = 2)
-    public BigDecimal refundAmount;
+    public BigDecimal refundAmount = BigDecimal.ZERO;
 
     @Column(name = "net_amount", nullable = false, precision = 8, scale = 2)
-    public BigDecimal netAmount;
+    public BigDecimal netAmount = BigDecimal.ZERO;
 
     @Column(name = "commission_rate", nullable = false, updatable = false, precision = 5, scale = 4)
     public BigDecimal commissionRate;
 
     @Column(name = "commission_amount", nullable = false, precision = 8, scale = 2)
-    public BigDecimal commissionAmount;
+    public BigDecimal commissionAmount = BigDecimal.ZERO;
 
     @Column(name = "expected_settle_amount", nullable = false, precision = 8, scale = 2)
-    public BigDecimal expectedSettleAmount;
+    public BigDecimal expectedSettleAmount = BigDecimal.ZERO;
 
     @Column(name = "sell_count", nullable = false, updatable = false)
-    public long sellCount;
+    public long sellCount = 0L;
 
     @Column(name = "cancel_count", nullable = false)
-    public long cancelCount;
+    public long cancelCount = 0L;
 
     @CreationTimestamp
-    @Column(name = "paid_at", updatable = false)
+    public LocalDateTime confirmedAt;
+
+    @Column(name = "paid_at")
     public LocalDateTime paidAt;
 
     public static SettlementLog of(
@@ -72,5 +77,10 @@ public class SettlementLog {
         log.sellCount = sellCount;
         log.cancelCount = cancelCount;
         return log;
+    }
+
+
+    public void paySuccess() {
+        this.paidAt = LocalDateTime.now();
     }
 }

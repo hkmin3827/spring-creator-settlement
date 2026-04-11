@@ -15,7 +15,8 @@ import java.time.LocalDateTime;
         indexes = {
                 @Index(name = "idx_sale_record_course_id", columnList = "course_id"),
                 @Index(name = "idx_sale_record_paid_at", columnList = "paid_at")
-        }
+        },
+        uniqueConstraints = @UniqueConstraint(name = "uk_salerecord_course_student", columnNames = {"course_id", "student_id"})
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SaleRecord {
@@ -38,8 +39,6 @@ public class SaleRecord {
     @CreationTimestamp
     public LocalDateTime paidAt;
 
-    @Version
-    public Long version;
 
     public static SaleRecord of(String id, String courseId, String studentId, BigDecimal amount, LocalDateTime paidAt) {
         SaleRecord record = new SaleRecord();

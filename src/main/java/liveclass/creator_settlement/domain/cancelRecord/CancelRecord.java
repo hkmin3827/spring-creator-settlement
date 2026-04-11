@@ -18,7 +18,7 @@ public class CancelRecord {
     @Id
     public String id;
 
-    @Column(name = "sale_record_id", nullable = false, updatable = false)
+    @Column(name = "sale_record_id", nullable = false, updatable = false, unique = true)
     public String saleRecordId;
 
     @Column(scale = 2, precision = 8, updatable = false)

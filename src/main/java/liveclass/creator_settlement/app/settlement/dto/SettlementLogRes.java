@@ -5,7 +5,7 @@ import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
 
 import java.math.BigDecimal;
 
-public record SettlementRes(
+public record SettlementLogRes(
     String creatorId,
     String creatorName,
     String yearMonth,
@@ -19,20 +19,25 @@ public record SettlementRes(
     long sellCount,
     long cancelCount
 ) {
-    public static SettlementRes from(SettlementLog log, SettlementStatus status, String creatorName) {
-        return new SettlementRes(
+    public static SettlementLogRes from(SettlementLog log, SettlementStatus status, String creatorName) {
+        return new SettlementLogRes(
                 log.creatorId,
                 creatorName,
                 log.yearMonth,
                 status,
-                log.totalAmount,
-                log.refundAmount,
-                log.netAmount,
+                strip(log.totalAmount),
+                strip(log.refundAmount),
+                strip(log.netAmount),
                 log.commissionRate,
-                log.commissionAmount,
-                log.expectedSettleAmount,
+                strip(log.commissionAmount),
+                strip(log.expectedSettleAmount),
                 log.sellCount,
                 log.cancelCount
         );
+    }
+
+    private static java.math.BigDecimal strip(java.math.BigDecimal value) {
+        java.math.BigDecimal stripped = value.stripTrailingZeros();
+        return stripped.scale() < 0 ? stripped.setScale(0) : stripped;
     }
 }
