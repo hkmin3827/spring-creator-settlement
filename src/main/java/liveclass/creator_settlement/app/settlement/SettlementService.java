@@ -1,10 +1,10 @@
 package liveclass.creator_settlement.app.settlement;
 
 import liveclass.creator_settlement.app.creator.CreatorQueryService;
-import liveclass.creator_settlement.app.settlement.dto.SettlementLogRes;
+import liveclass.creator_settlement.app.settlement.dto.SettlementRecordRes;
 import liveclass.creator_settlement.domain.settlement.Settlement;
-import liveclass.creator_settlement.domain.settlement.SettlementLog;
-import liveclass.creator_settlement.domain.settlement.SettlementLogRepository;
+import liveclass.creator_settlement.domain.settlement.SettlementRecord;
+import liveclass.creator_settlement.domain.settlement.SettlementRecordRepository;
 import liveclass.creator_settlement.domain.settlement.SettlementRepository;
 import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
 import liveclass.creator_settlement.global.component.IdGenerator;
@@ -23,10 +23,10 @@ import java.time.YearMonth;
 public class SettlementService {
 
     private final SettlementRepository settlementRepository;
-    private final SettlementLogRepository settlementLogRepository;
+    private final SettlementRecordRepository settlementRecordRepository;
     private final CreatorQueryService creatorQueryService;
     private final IdGenerator idGenerator;
-    private final SettlementLogService settlementLogService;
+    private final SettlementRecordService settlementRecordService;
 
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -46,7 +46,7 @@ public class SettlementService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public SettlementLogRes confirmPending(String settlementId) {
+    public SettlementRecordRes confirmPending(String settlementId) {
         Settlement settlement = settlementRepository.findById(settlementId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND));
 
@@ -54,13 +54,13 @@ public class SettlementService {
             throw new BusinessException(ErrorCode.ALREADY_CONFIRMED_SETTLEMENT);
         }
 
-        SettlementLog log = settlementLogService.create(settlement);
+        SettlementRecord record = settlementRecordService.create(settlement);
 
         String creatorName = creatorQueryService.getCreatorName(settlement.creatorId);
-        return SettlementLogRes.from(log, SettlementStatus.CONFIRMED, creatorName);
+        return SettlementRecordRes.from(record, SettlementStatus.CONFIRMED, creatorName);
     }
 
-    // 정산금 지급 완료 후 호출 (상태변경) ( CONFIRM -> PAID  + log에 paidAt 저장)
+    // 정산금 지급 완료 후 호출 (상태변경) ( CONFIRM -> PAID  + record에 paidAt 저장)
     public void markAsPaid(String settlementId) {
         Settlement settlement = settlementRepository.findById(settlementId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND));
@@ -74,8 +74,8 @@ public class SettlementService {
 
         settlement.markAsPaid();
 
-        SettlementLog log = settlementLogRepository.findBySettlementId(settlement.id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_LOG_NOT_FOUND));
-        log.paySuccess();
+        SettlementRecord record = settlementRecordRepository.findBySettlementId(settlement.id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_RECORD_NOT_FOUND));
+        record.paySuccess();
     }
 }

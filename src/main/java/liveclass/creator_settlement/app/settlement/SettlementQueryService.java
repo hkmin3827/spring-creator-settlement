@@ -1,10 +1,10 @@
 package liveclass.creator_settlement.app.settlement;
 
 import liveclass.creator_settlement.app.settlement.dto.SettlementCalculation;
-import liveclass.creator_settlement.app.settlement.dto.SettlementLogRes;
+import liveclass.creator_settlement.app.settlement.dto.SettlementRecordRes;
 import liveclass.creator_settlement.app.creator.CreatorQueryService;
-import liveclass.creator_settlement.domain.settlement.SettlementLog;
-import liveclass.creator_settlement.domain.settlement.SettlementLogRepository;
+import liveclass.creator_settlement.domain.settlement.SettlementRecord;
+import liveclass.creator_settlement.domain.settlement.SettlementRecordRepository;
 import liveclass.creator_settlement.domain.settlement.SettlementRepository;
 import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
 import liveclass.creator_settlement.global.exception.BusinessException;
@@ -21,11 +21,11 @@ import java.time.YearMonth;
 public class SettlementQueryService {
 
     private final SettlementRepository settlementRepository;
-    private final SettlementLogRepository settlementLogRepository;
+    private final SettlementRecordRepository settlementRecordRepository;
     private final CreatorQueryService creatorQueryService;
-    private final SettlementLogService settlementLogService;
+    private final SettlementRecordService settlementRecordService;
 
-    public SettlementLogRes getMonthlySettlement(String creatorId, YearMonth yearMonth) {
+    public SettlementRecordRes getMonthlySettlement(String creatorId, YearMonth yearMonth) {
         String creatorName = creatorQueryService.getCreatorName(creatorId);
 
         if (YearMonth.now().isBefore(yearMonth)) {
@@ -33,8 +33,8 @@ public class SettlementQueryService {
         }
         // 현재 월은 항상 실시간 계산 — 배치 대상이 아님
         if (YearMonth.now().equals(yearMonth)) {
-            SettlementCalculation calc = settlementLogService.calculate(creatorId, yearMonth);
-            return new SettlementLogRes(
+            SettlementCalculation calc = settlementRecordService.calculate(creatorId, yearMonth);
+            return new SettlementRecordRes(
                     creatorId, creatorName, yearMonth.toString(), SettlementStatus.PENDING,
                     calc.totalAmount(), calc.refundAmount(), calc.netAmount(),
                     calc.commissionRate(), calc.commissionAmount(), calc.expectedSettleAmount(),
@@ -42,16 +42,16 @@ public class SettlementQueryService {
             );
         }
 
-        // 과거 월: 배치가 완료됐으면 SettlementLog에서 반환, 아직 안 돌았으면 실시간 계산
+        // 과거 월: 배치가 완료됐으면 SettlementRecord에서 반환, 아직 안 돌았으면 실시간 계산
         return settlementRepository.findByCreatorIdAndYearMonth(creatorId, yearMonth.toString())
                 .map(settlement -> {
-                    SettlementLog log = settlementLogRepository.findBySettlementId(settlement.id)
+                    SettlementRecord record = settlementRecordRepository.findBySettlementId(settlement.id)
                             .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND));
-                    return SettlementLogRes.from(log, settlement.status, creatorName);
+                    return SettlementRecordRes.from(record, settlement.status, creatorName);
                 })
                 .orElseGet(() -> {
-                    SettlementCalculation calc = settlementLogService.calculate(creatorId, yearMonth);
-                    return new SettlementLogRes(
+                    SettlementCalculation calc = settlementRecordService.calculate(creatorId, yearMonth);
+                    return new SettlementRecordRes(
                             creatorId, creatorName, yearMonth.toString(), SettlementStatus.PENDING,
                             calc.totalAmount(), calc.refundAmount(), calc.netAmount(),
                             calc.commissionRate(), calc.commissionAmount(), calc.expectedSettleAmount(),

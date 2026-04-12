@@ -164,8 +164,8 @@ GET /api/v1/settlement/creator/{creatorId}?yearMonth=2025-03
 ```
 
 - `PENDING`: 정산 확정 전 — 현재 월 포함, 항상 실시간 계산
-- `CONFIRMED`: 정산 확정됨 — confirm 시점 SettlementLog 스냅샷에서 조회
-- `PAID`: 지급 완료 — 동일 SettlementLog 스냅샷에서 조회
+- `CONFIRMED`: 정산 확정됨 — confirm 시점 SettlementRecord 스냅샷에서 조회
+- `PAID`: 지급 완료 — 동일 SettlementRecord 스냅샷에서 조회
 - 금액 필드는 소수점 trailing zeros를 제거한 정수형으로 반환합니다.
 
 ---
@@ -240,7 +240,7 @@ POST /api/v1/admin/settlement/{settlementId}/pay
 - CONFIRMED 상태의 정산만 PAID로 전환 가능 (`INVALID_STATUS_TO_SETTLE`)
 - 이미 PAID 상태이면 `ALREADY_PAID_SETTLEMENT` 오류 반환
 - `Settlement.@Version` 낙관적 락으로 동시 호출 시 `CONCURRENT_UPDATE_CONFLICT` 오류 반환
-- 금액 스냅샷은 confirm 시점에 이미 생성된 `SettlementLog`를 그대로 사용
+- 금액 스냅샷은 confirm 시점에 이미 생성된 `SettlementRecord`를 그대로 사용
 
 ---
 
@@ -253,7 +253,7 @@ Creator
               └── CancelRecord (1:1, saleRecordId FK)
 
 Settlement (월별 정산 마커, creator_id + year_month unique)
-  └── SettlementLog (PAID 시점 스냅샷, settlementId FK)
+  └── SettlementRecord (PAID 시점 스냅샷, settlementId FK)
 ```
 
 ### 주요 엔티티
@@ -265,7 +265,7 @@ Settlement (월별 정산 마커, creator_id + year_month unique)
 | `SaleRecord` | `sale_records` | 판매 내역. amount, paidAt, status(PAID/CANCELLED). courseId+studentId 복합 unique. 취소 시 비관적 락 |
 | `CancelRecord` | `cancel_records` | 취소 내역. saleRecordId FK unique — 동일 판매 건 중복 취소 불가. refundAmount, cancelledAt |
 | `Settlement` | `settlements` | 정산 이벤트 마커. status(PENDING/CONFIRMED/PAID), creator_id+year_month unique. `@Version` 낙관적 락으로 markAsPaid 동시 호출 방지 |
-| `SettlementLog` | `settlement_logs` | confirm 시점 금액 스냅샷. creator_id+year_month unique, settlement_id unique. 사후 환불 발생 시 수정 가능 |
+| `SettlementRecord` | `settlement_records` | confirm 시점 금액 스냅샷. creator_id+year_month unique, settlement_id unique. 사후 환불 발생 시 수정 가능 |
 
 ### Money 값 객체
 
@@ -289,7 +289,7 @@ Settlement (월별 정산 마커, creator_id + year_month unique)
 
 ## 설계 결정과 이유
 
-### 1. Settlement 아키텍처 진화 — 금액 직접 저장 → 마커 + SettlementLog 스냅샷
+### 1. Settlement 아키텍처 진화 — 금액 직접 저장 → 마커 + SettlementRecord 스냅샷
 #### * 아키텍쳐 전환 규모가 커서 branch 분리하여 개발 후 병합하였습니다.
 
 #### 초기 설계
@@ -307,8 +307,8 @@ PENDING 상태 계산 결과는 Redis에 TTL 1시간으로 캐싱.
 #### 중간 과정
 
 `Settlement`를 `(id, creatorId, yearMonth, status)` 만 보유하는 이벤트 마커로 축소.  
-PAID 전환(`markAsPaid`) 시점에 계산값을 `SettlementLog`에 스냅샷으로 저장.  
-Redis 의존성 전체 제거. PENDING·CONFIRMED는 실시간 계산, PAID만 SettlementLog에서 반환.
+PAID 전환(`markAsPaid`) 시점에 계산값을 `SettlementRecord`에 스냅샷으로 저장.  
+Redis 의존성 전체 제거. PENDING·CONFIRMED는 실시간 계산, PAID만 SettlementRecord에서 반환.
 
 ```
 남은 문제
@@ -319,17 +319,17 @@ Redis 의존성 전체 제거. PENDING·CONFIRMED는 실시간 계산, PAID만 S
 
 #### 최종 설계
 
-`confirm()` 시점에 `Settlement`(마커) + `SettlementLog`(금액 스냅샷)를 동시 생성.  
-`markAsPaid()`는 Settlement 상태만 PAID로 전환하고 기존 SettlementLog를 그대로 사용.
+`confirm()` 시점에 `Settlement`(마커) + `SettlementRecord`(금액 스냅샷)를 동시 생성.  
+`markAsPaid()`는 Settlement 상태만 PAID로 전환하고 기존 SettlementRecord를 그대로 사용.
 
 ```
 조회 분기 기준 (getMonthlySettlement)
 - yearMonth >= 현재 월  →  항상 실시간 계산 (PENDING 반환, 배치 대상 아님)
-- yearMonth <  현재 월  →  Settlement 있으면 SettlementLog에서 반환
+- yearMonth <  현재 월  →  Settlement 있으면 SettlementRecord에서 반환
                            Settlement 없으면 실시간 계산 (배치 전 fallback)
 ```
 
-사후 환불이 발생하면 `SettlementLog`의 refundAmount·netAmount 등만 수정하는 방식으로 이력 관리.
+사후 환불이 발생하면 `SettlementRecord`의 refundAmount·netAmount 등만 수정하는 방식으로 이력 관리.
 
 ### 2. UI용 creatorName 캐싱 이용
 
@@ -350,13 +350,13 @@ userName **Spring Caffeine Cache** 이용한 캐싱 전략으로 변경
 
 
 
-### 3. SettlementLogService 분리 — 계산·로그 생성 책임 분리
+### 3. SettlementRecordService 분리 — 계산·로그 생성 책임 분리
 
-기존 `SettlementService`에서 금액 계산(`calculate`)과 `SettlementLog` 생성 로직을 `SettlementLogService`로 분리했습니다.
+기존 `SettlementService`에서 금액 계산(`calculate`)과 `SettlementRecord` 생성 로직을 `SettlementRecordService`로 분리했습니다.
 
 - `SettlementService`: Settlement 엔티티의 상태 전환(createPending, confirmPending, markAsPaid) 담당
-- `SettlementLogService`: 판매·취소 내역 집계 계산 + SettlementLog 생성 담당
-- `SettlementQueryService`: 조회 전용 (상태별 분기 후 실시간 계산 또는 SettlementLog 조회)
+- `SettlementRecordService`: 판매·취소 내역 집계 계산 + SettlementRecord 생성 담당
+- `SettlementQueryService`: 조회 전용 (상태별 분기 후 실시간 계산 또는 SettlementRecord 조회)
 
 배치(`SettlementItemWriter`)도 `SettlementService`만 의존하여 호출합니다.
 
@@ -408,7 +408,7 @@ Spring Batch `Reader → Processor → Writer` 구조로 구현되었습니다.
 - **관리자 권한으로 크리에이터 정산 가능**: 크리에이터에게 정산금을 지불하는 계정은 관리자라고 전제, 혹여 관리자가 아닌 직원 권한이 있다면, 권한 수정 필요
 - **관리자 전체 정산 내역 조회 대상 - 모든 크리에이터(탈퇴 여부 필터링 X)**: 크리에이터를 findAll()로 조회하도록 구현. 추후 getAllCreatorNames()의 메서드명과 내부 findAll만 변경하면 softDelete 조건 추가 가능
 - **크리에이터/강의 등록 API 없음**: 초기 데이터는 `DataInitializer`(서버 시작 시 더미 데이터 삽입)로만 제공됩니다.
-- **SaleRecord PAID, CANCELLED로 상태 제한**: 결제 실패로 인한 강의 구매 시도 이력을 저장 하려면 FAILED와 같은 값을 추가하면 좋겠으나, 결제 로직의 구조가 제시되지 않아 결제 확정 시 판매 내역 생성 메서드 호출로 가정하고 paidAt을 생성시점에 stamp 되도록 하였습니다. 추후 이력을 남기고 싶으면 FAILED status 추가나 별도 log 추가로 관리할 수 있습니다.
+- **SaleRecord PAID, CANCELLED로 상태 제한**: 결제 실패로 인한 강의 구매 시도 이력을 저장 하려면 FAILED와 같은 값을 추가하면 좋겠으나, 결제 로직의 구조가 제시되지 않아 결제 확정 시 판매 내역 생성 메서드 호출로 가정하고 paidAt을 생성시점에 stamp 되도록 하였습니다. 추후 이력을 남기고 싶으면 FAILED status 추가나 별도 Record 추가로 관리할 수 있습니다.
 - **IdGenerator 재시작 시 초기화**: 운영 환경에서는 UUID 또는 DB 시퀀스 기반 ID 전략 교체가 필요합니다.
 - **수수료 변경 이력 관리**: application.yml에서 불러와서 사용하며, git 태그 기반 이력 추적은 운영 규약으로만 존재합니다.
 - **배치 스킵 정책**: `skip(Exception.class).skipLimit(MAX_VALUE)`로 개별 크리에이터 실패가 전체 배치를 중단시키지 않도록 설정. 운영 환경에서는 스킵된 항목에 대한 알림/모니터링 연동 필요합니다.
@@ -423,7 +423,7 @@ Spring Batch `Reader → Processor → Writer` 구조로 구현되었습니다.
 - 커밋 후 git 태그 기능 이용하여 VCS에서 변경 이력 관찰이 쉽게 가능합니다.
 
 #### 2. 현재 월 중간 정산 금액 확인 가능
-- Settlement를 생성하고 계산값을 update하는 방식이 아닌, 계산 후 다음 월초 배치로 Settlement와 SettlementLog를 생성합니다.
+- Settlement를 생성하고 계산값을 update하는 방식이 아닌, 계산 후 다음 월초 배치로 Settlement와 SettlementRecord를 생성합니다.
 - aggregate는 후생성 방식이 아니어도 필요한 과정이고, calculate 메서드 추가로 성능 저하는 미미하다고 판단하고 get 메서드 호출 시 즉시 계산하므로 현재 진행중인 월의 정산에 필요한 데이터도 조회 가능합니다.
 - 관리자 정산 내역 집계도 월초월말이 아닌 상세 월일 지정으로 조회 가능합니다.
 
@@ -450,7 +450,7 @@ chore한 작업은 직접 작성 / 모든 설계에 주도적으로 지시하고
 
 아래는 대화를 통해 결정되거나 리팩토링된 주요 사항입니다.
 
-- **Settlement 아키텍처 재설계**: 금액 필드를 Settlement에 저장하는 초기 구조의 문제를 제기하여, Settlement(마커) + SettlementLog(스냅샷) 분리 구조로 전환했습니다.
+- **Settlement 아키텍처 재설계**: 금액 필드를 Settlement에 저장하는 초기 구조의 문제를 제기하여, Settlement(마커) + SettlementRecord(스냅샷) 분리 구조로 전환했습니다.
 - **정산 확정 월 종료 체크**: "아직 판매가 발생할 수 있는 달에 정산을 확정하면 안 된다"는 비즈니스 제약을 추가했습니다.
 - **N+1 크리에이터 이름 조회 개선**: 루프 내 단건 조회 구조를 발견하여 `getCreatorNames(Set)`으로 벌크 조회 방식으로 수정했습니다.
 - **Object[] 타입 불안전 집계 개선**: JPQL 집계 결과를 `Object[]`로 처리하던 것을 `CreatorAggregationDto` 레코드 + 생성자 표현식으로 교체하도록 제안했습니다.
@@ -459,4 +459,4 @@ chore한 작업은 직접 작성 / 모든 설계에 주도적으로 지시하고
 - **Spring Boot 4.x 패키지 변경 대응**: `@DataJpaTest` 관련 패키지가 변경된 것을 파악하여 테스트 코드를 수정했습니다.
 - **Spring Batch 월별 정산 자동화**: `Reader → Processor → Writer` 구조 설계 및 구현. Processor의 중복 처리 방지 필터링, `faultTolerant` 스킵 정책, 스케줄러와의 연동 방식을 포함합니다.
 - **AdminSettlementRes 팩토리 메서드 도입**: Money→BigDecimal 변환과 trailing zeros 정리 책임을 서비스에서 DTO 안으로 이동하는 리팩토링을 제안하고 구현했습니다.
-- **SettlementLogService 분리**: 금액 계산과 SettlementLog 생성 로직을 SettlementService에서 분리하여 단일 책임 원칙을 적용했습니다.
+- **SettlementRecordService 분리**: 금액 계산과 SettlementRecord 생성 로직을 SettlementService에서 분리하여 단일 책임 원칙을 적용했습니다.

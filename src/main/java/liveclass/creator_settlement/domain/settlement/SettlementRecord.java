@@ -10,11 +10,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(
-        name = "settlement_logs",
-        uniqueConstraints = @UniqueConstraint(name = "uk_settlement_log_creator_year_month",columnNames = {"creator_id", "year_month"})
+        name = "settlement_records",
+        uniqueConstraints = @UniqueConstraint(name = "uk_settlement_record_creator_year_month",columnNames = {"creator_id", "year_month"})
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class SettlementLog {
+public class SettlementRecord {
 
     @Id
     public String id;
@@ -58,25 +58,25 @@ public class SettlementLog {
     @Column(name = "paid_at")
     public LocalDateTime paidAt;
 
-    public static SettlementLog of(
+    public static SettlementRecord of(
             String id, String settlementId, String creatorId, String yearMonth,
             BigDecimal totalAmount, BigDecimal refundAmount, BigDecimal netAmount,
             BigDecimal commissionRate, BigDecimal commissionAmount, BigDecimal expectedSettleAmount,
             long sellCount, long cancelCount) {
-        SettlementLog log = new SettlementLog();
-        log.id = id;
-        log.settlementId = settlementId;
-        log.creatorId = creatorId;
-        log.yearMonth = yearMonth;
-        log.totalAmount = totalAmount;
-        log.refundAmount = refundAmount;
-        log.netAmount = netAmount;
-        log.commissionRate = commissionRate;
-        log.commissionAmount = commissionAmount;
-        log.expectedSettleAmount = expectedSettleAmount;
-        log.sellCount = sellCount;
-        log.cancelCount = cancelCount;
-        return log;
+        SettlementRecord record = new SettlementRecord();
+        record.id = id;
+        record.settlementId = settlementId;
+        record.creatorId = creatorId;
+        record.yearMonth = yearMonth;
+        record.totalAmount = totalAmount;
+        record.refundAmount = refundAmount;
+        record.netAmount = netAmount;
+        record.commissionRate = commissionRate;
+        record.commissionAmount = commissionAmount;
+        record.expectedSettleAmount = expectedSettleAmount;
+        record.sellCount = sellCount;
+        record.cancelCount = cancelCount;
+        return record;
     }
 
 

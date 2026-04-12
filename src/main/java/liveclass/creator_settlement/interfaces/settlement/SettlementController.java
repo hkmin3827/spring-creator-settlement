@@ -1,7 +1,7 @@
 package liveclass.creator_settlement.interfaces.settlement;
 
 import liveclass.creator_settlement.app.settlement.SettlementQueryService;
-import liveclass.creator_settlement.app.settlement.dto.SettlementLogRes;
+import liveclass.creator_settlement.app.settlement.dto.SettlementRecordRes;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +16,7 @@ public class SettlementController {
     private final SettlementQueryService settlementQueryService;
 
     @GetMapping(value = "/creator/{creatorId}", version = "v1")
-    public SettlementLogRes getMonthlySettlement(
+    public SettlementRecordRes getMonthlySettlement(
             @PathVariable String creatorId,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM") String yearMonth
     ) {

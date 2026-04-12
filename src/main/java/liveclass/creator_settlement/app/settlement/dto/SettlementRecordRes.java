@@ -1,11 +1,11 @@
 package liveclass.creator_settlement.app.settlement.dto;
 
-import liveclass.creator_settlement.domain.settlement.SettlementLog;
+import liveclass.creator_settlement.domain.settlement.SettlementRecord;
 import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
 
 import java.math.BigDecimal;
 
-public record SettlementLogRes(
+public record SettlementRecordRes(
     String creatorId,
     String creatorName,
     String yearMonth,
@@ -19,20 +19,20 @@ public record SettlementLogRes(
     long sellCount,
     long cancelCount
 ) {
-    public static SettlementLogRes from(SettlementLog log, SettlementStatus status, String creatorName) {
-        return new SettlementLogRes(
-                log.creatorId,
+    public static SettlementRecordRes from(SettlementRecord record, SettlementStatus status, String creatorName) {
+        return new SettlementRecordRes(
+                record.creatorId,
                 creatorName,
-                log.yearMonth,
+                record.yearMonth,
                 status,
-                strip(log.totalAmount),
-                strip(log.refundAmount),
-                strip(log.netAmount),
-                log.commissionRate,
-                strip(log.commissionAmount),
-                strip(log.expectedSettleAmount),
-                log.sellCount,
-                log.cancelCount
+                strip(record.totalAmount),
+                strip(record.refundAmount),
+                strip(record.netAmount),
+                record.commissionRate,
+                strip(record.commissionAmount),
+                strip(record.expectedSettleAmount),
+                record.sellCount,
+                record.cancelCount
         );
     }
 

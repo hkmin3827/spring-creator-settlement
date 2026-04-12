@@ -1,16 +1,14 @@
 package liveclass.creator_settlement.app.settlement;
 
 import liveclass.creator_settlement.app.creator.CreatorQueryService;
-import liveclass.creator_settlement.app.settlement.dto.AdminSettlementRes;
-import liveclass.creator_settlement.app.settlement.dto.SettlementRes;
-import liveclass.creator_settlement.app.settlement.dto.CreatorAggregationDto;
+import liveclass.creator_settlement.app.settlement.dto.SettlementRecordRes;
 import liveclass.creator_settlement.domain.cancelRecord.CancelRecord;
 import liveclass.creator_settlement.domain.cancelRecord.CancelRecordRepository;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecord;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
 import liveclass.creator_settlement.domain.settlement.Settlement;
-import liveclass.creator_settlement.domain.settlement.SettlementLog;
-import liveclass.creator_settlement.domain.settlement.SettlementLogRepository;
+import liveclass.creator_settlement.domain.settlement.SettlementRecord;
+import liveclass.creator_settlement.domain.settlement.SettlementRecordRepository;
 import liveclass.creator_settlement.domain.settlement.SettlementRepository;
 import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,10 +20,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,7 +35,8 @@ class SettlementQueryServiceTest {
     @Mock SaleRecordRepository saleRecordRepository;
     @Mock CancelRecordRepository cancelRecordRepository;
     @Mock SettlementRepository settlementRepository;
-    @Mock SettlementLogRepository settlementLogRepository;
+    @Mock
+    SettlementRecordRepository settlementRecordRepository;
     @Mock CreatorQueryService creatorQueryService;
 
     @InjectMocks SettlementQueryService settlementQueryService;
@@ -50,11 +47,11 @@ class SettlementQueryServiceTest {
     }
 
     @Test
-    void getMonthlySettlement_CONFIRMED_정산_SettlementLog에서_반환() {
+    void getMonthlySettlement_CONFIRMED_정산_SettlementRecord에서_반환() {
         Settlement settlement = Settlement.create("settle-1", "creator-1", "2025-03");
         settlement.confirm();
-        SettlementLog log = SettlementLog.of(
-                "log-1", "settle-1", "creator-1", "2025-03",
+        SettlementRecord record = SettlementRecord.of(
+                "record-1", "settle-1", "creator-1", "2025-03",
                 new BigDecimal("300000"), new BigDecimal("50000"), new BigDecimal("250000"),
                 new BigDecimal("0.20"), new BigDecimal("50000"), new BigDecimal("200000"),
                 3L, 1L
@@ -63,9 +60,9 @@ class SettlementQueryServiceTest {
         given(creatorQueryService.getCreatorName("creator-1")).willReturn("홍길동");
         given(settlementRepository.findByCreatorIdAndYearMonth("creator-1", "2025-03"))
                 .willReturn(Optional.of(settlement));
-        given(settlementLogRepository.findBySettlementId("settle-1")).willReturn(Optional.of(log));
+        given(settlementRecordRepository.findBySettlementId("settle-1")).willReturn(Optional.of(record));
 
-        SettlementRes result = settlementQueryService.getMonthlySettlement("creator-1", YearMonth.of(2025, 3));
+        SettlementRecordRes result = settlementQueryService.getMonthlySettlement("creator-1", YearMonth.of(2025, 3));
 
         assertThat(result.status()).isEqualTo(SettlementStatus.CONFIRMED);
         assertThat(result.creatorName()).isEqualTo("홍길동");
@@ -77,13 +74,13 @@ class SettlementQueryServiceTest {
     }
 
     @Test
-    void getMonthlySettlement_PAID_정산_SettlementLog에서_반환() {
+    void getMonthlySettlement_PAID_정산_SettlementRecord에서_반환() {
         Settlement settlement = Settlement.create("settle-1", "creator-1", "2025-03");
         settlement.confirm();
         settlement.markAsPaid();
 
-        SettlementLog log = SettlementLog.of(
-                "log-1", "settle-1", "creator-1", "2025-03",
+        SettlementRecord record = SettlementRecord.of(
+                "record-1", "settle-1", "creator-1", "2025-03",
                 new BigDecimal("300000"), new BigDecimal("50000"), new BigDecimal("250000"),
                 new BigDecimal("0.20"), new BigDecimal("50000"), new BigDecimal("200000"),
                 3L, 1L
@@ -92,9 +89,9 @@ class SettlementQueryServiceTest {
         given(creatorQueryService.getCreatorName("creator-1")).willReturn("홍길동");
         given(settlementRepository.findByCreatorIdAndYearMonth("creator-1", "2025-03"))
                 .willReturn(Optional.of(settlement));
-        given(settlementLogRepository.findBySettlementId("settle-1")).willReturn(Optional.of(log));
+        given(settlementRecordRepository.findBySettlementId("settle-1")).willReturn(Optional.of(record));
 
-        SettlementRes result = settlementQueryService.getMonthlySettlement("creator-1", YearMonth.of(2025, 3));
+        SettlementRecordRes result = settlementQueryService.getMonthlySettlement("creator-1", YearMonth.of(2025, 3));
 
         assertThat(result.status()).isEqualTo(SettlementStatus.PAID);
         assertThat(result.creatorName()).isEqualTo("홍길동");
@@ -117,7 +114,7 @@ class SettlementQueryServiceTest {
         given(cancelRecordRepository.findByCreatorIdAndCancelledAtBetween(eq("creator-1"), any(), any()))
                 .willReturn(List.of(cancel));
 
-        SettlementRes result = settlementQueryService.getMonthlySettlement("creator-1", YearMonth.of(2025, 3));
+        SettlementRecordRes result = settlementQueryService.getMonthlySettlement("creator-1", YearMonth.of(2025, 3));
 
         assertThat(result.status()).isEqualTo(SettlementStatus.PENDING);
         assertThat(result.creatorName()).isEqualTo("홍길동");

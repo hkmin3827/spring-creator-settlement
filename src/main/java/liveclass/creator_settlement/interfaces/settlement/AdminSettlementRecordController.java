@@ -1,6 +1,6 @@
 package liveclass.creator_settlement.interfaces.settlement;
 
-import liveclass.creator_settlement.app.settlement.SettlementLogService;
+import liveclass.creator_settlement.app.settlement.SettlementRecordService;
 import liveclass.creator_settlement.domain.settlement.Settlement;
 import liveclass.creator_settlement.domain.settlement.SettlementRepository;
 import liveclass.creator_settlement.global.exception.BusinessException;
@@ -13,16 +13,16 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/admin/settlementlog")
-public class AdminSettlementLogController {
+@RequestMapping("/api/admin/settlement-record")
+public class AdminSettlementRecordController {
 
-    private final SettlementLogService settlementLogService;
+    private final SettlementRecordService settlementRecordService;
     private final SettlementRepository settlementRepository;
 
     // 관리자 수동 정산 내역 생성
-    public ResponseEntity<Void> createSettlementLog(@RequestBody String settlementId) {
+    public ResponseEntity<Void> createSettlementRecord(@RequestBody String settlementId) {
         Settlement sm = settlementRepository.findById(settlementId).orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND));
-        settlementLogService.create(sm);
+        settlementRecordService.create(sm);
 
         return ResponseEntity.noContent().build();
     }

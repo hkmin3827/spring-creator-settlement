@@ -4,8 +4,8 @@ import liveclass.creator_settlement.app.settlement.dto.SettlementCalculation;
 import liveclass.creator_settlement.domain.cancelRecord.CancelRecordRepository;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
 import liveclass.creator_settlement.domain.settlement.Settlement;
-import liveclass.creator_settlement.domain.settlement.SettlementLog;
-import liveclass.creator_settlement.domain.settlement.SettlementLogRepository;
+import liveclass.creator_settlement.domain.settlement.SettlementRecord;
+import liveclass.creator_settlement.domain.settlement.SettlementRecordRepository;
 import liveclass.creator_settlement.domain.vo.Money;
 import liveclass.creator_settlement.global.component.IdGenerator;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ import java.time.YearMonth;
 
 @RequiredArgsConstructor
 @Service
-public class SettlementLogService {
+public class SettlementRecordService {
 
     @Value("${app.commission-rate}")
     private BigDecimal commissionRate;
@@ -27,16 +27,16 @@ public class SettlementLogService {
     private final SaleRecordRepository saleRecordRepository;
     private final CancelRecordRepository cancelRecordRepository;
     private final IdGenerator idGenerator;
-    private final SettlementLogRepository settlementLogRepository;
+    private final SettlementRecordRepository settlementRecordRepository;
 
     @Transactional
-    public SettlementLog create(Settlement settlement) {
+    public SettlementRecord create(Settlement settlement) {
 
         SettlementCalculation calc = calculate(settlement.creatorId, YearMonth.parse(settlement.yearMonth));
         settlement.confirm();
 
-        SettlementLog log = SettlementLog.of(
-                idGenerator.generateSettlementLogId(),
+        SettlementRecord record = SettlementRecord.of(
+                idGenerator.generateSettlementRecordId(),
                 settlement.id,
                 settlement.creatorId,
                 settlement.yearMonth,
@@ -50,7 +50,7 @@ public class SettlementLogService {
                 calc.cancelCount()
         );
 
-        return settlementLogRepository.save(log);
+        return settlementRecordRepository.save(record);
     }
 
 

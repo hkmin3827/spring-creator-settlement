@@ -3,7 +3,7 @@ erDiagram
     CREATOR ||--o{ SETTLEMENT : "has"
     COURSE ||--o{ SALE_RECORD : "has"
     SALE_RECORD ||--o| CANCEL_RECORD : "has"
-    SETTLEMENT ||--o| SETTLEMENT_LOG : "generates"
+    SETTLEMENT ||--o| SETTLEMENT_RECORD : "generates"
 
     CREATOR {
         String id PK
@@ -38,7 +38,7 @@ erDiagram
         LocalDateTime updated_at
         Long version
     }
-    SETTLEMENT_LOG {
+    SETTLEMENT_RECORD {
         String id PK
         String settlement_id FK
         String creator_id
