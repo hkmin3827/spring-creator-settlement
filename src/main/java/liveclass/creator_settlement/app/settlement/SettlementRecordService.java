@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalTime;
 import java.time.YearMonth;
 
@@ -33,7 +34,6 @@ public class SettlementRecordService {
     public SettlementRecord create(Settlement settlement) {
 
         SettlementCalculation calc = calculate(settlement.creatorId, YearMonth.parse(settlement.yearMonth));
-        settlement.confirm();
 
         SettlementRecord record = SettlementRecord.of(
                 idGenerator.generateSettlementRecordId(),
@@ -71,16 +71,16 @@ public class SettlementRecordService {
                 .reduce(Money.ZERO, Money::add);
 
         Money netAmount = totalAmount.subtract(refundAmount);
-        Money commissionAmount = Money.of(netAmount.amount().multiply(commissionRate));
-        Money settlementAmount = netAmount.subtract(commissionAmount);
+        BigDecimal finalCommissionAmount = netAmount.amount().multiply(commissionRate).setScale(0, RoundingMode.DOWN);
+        BigDecimal settlementAmount = netAmount.amount().subtract(finalCommissionAmount);
 
         return new SettlementCalculation(
                 totalAmount.amount(),
                 refundAmount.amount(),
                 netAmount.amount(),
                 commissionRate,
-                commissionAmount.amount(),
-                settlementAmount.amount(),
+                finalCommissionAmount,
+                settlementAmount,
                 sales.size(),
                 cancels.size()
         );

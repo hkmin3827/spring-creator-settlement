@@ -12,7 +12,6 @@ import liveclass.creator_settlement.global.exception.BusinessException;
 import liveclass.creator_settlement.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.YearMonth;
@@ -29,7 +28,6 @@ public class SettlementService {
     private final SettlementRecordService settlementRecordService;
 
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public String createPending(String creatorId, String yearMonth) {
         if (!YearMonth.now().isAfter(YearMonth.parse(yearMonth))) {
             throw new BusinessException(ErrorCode.YEAR_MONTH_BAD_REQUEST);
@@ -45,7 +43,6 @@ public class SettlementService {
         return newSm.id;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public SettlementRecordRes confirmPending(String settlementId) {
         Settlement settlement = settlementRepository.findById(settlementId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND));
@@ -55,6 +52,8 @@ public class SettlementService {
         }
 
         SettlementRecord record = settlementRecordService.create(settlement);
+
+        settlement.confirm();
 
         String creatorName = creatorQueryService.getCreatorName(settlement.creatorId);
         return SettlementRecordRes.from(record, SettlementStatus.CONFIRMED, creatorName);
