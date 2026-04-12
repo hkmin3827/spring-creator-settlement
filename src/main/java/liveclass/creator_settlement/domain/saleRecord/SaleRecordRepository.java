@@ -35,6 +35,28 @@ public interface SaleRecordRepository extends JpaRepository<SaleRecord, String> 
     @Query("""
         SELECT sr FROM SaleRecord sr
         WHERE sr.courseId IN (SELECT c.id FROM Course c WHERE c.creatorId = :creatorId)
+        AND sr.paidAt >= :start
+        ORDER BY sr.paidAt DESC
+        """)
+    List<SaleRecord> findByCreatorIdAndPaidAtStart(
+            @Param("creatorId") String creatorId,
+            @Param("start") LocalDateTime start
+    );
+
+    @Query("""
+        SELECT sr FROM SaleRecord sr
+        WHERE sr.courseId IN (SELECT c.id FROM Course c WHERE c.creatorId = :creatorId)
+        AND sr.paidAt <= :end
+        ORDER BY sr.paidAt DESC
+        """)
+    List<SaleRecord> findByCreatorIdAndPaidAtEnd(
+            @Param("creatorId") String creatorId,
+            @Param("end") LocalDateTime end
+    );
+
+    @Query("""
+        SELECT sr FROM SaleRecord sr
+        WHERE sr.courseId IN (SELECT c.id FROM Course c WHERE c.creatorId = :creatorId)
         ORDER BY sr.paidAt DESC
         """)
     List<SaleRecord> findAllByCreatorId(@Param("creatorId") String creatorId);

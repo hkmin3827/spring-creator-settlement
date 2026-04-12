@@ -27,7 +27,7 @@ public class SaleRecordService {
     private final CourseRepository courseRepository;
     private final IdGenerator idGenerator;
 
-    public SaleRecordRes register(SaleRecordCreateReq req) {
+    public String register(SaleRecordCreateReq req) {
         Course course = courseRepository.findById(req.courseId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.COURSE_NOT_FOUND));
 
@@ -43,11 +43,11 @@ public class SaleRecordService {
                 req.paidAt()
         );
 
-        return SaleRecordRes.from(saleRecordRepository.save(saleRecord));
+        return saleRecordRepository.save(saleRecord).id;
     }
 
     @Transactional(readOnly = true)
-    public List<SaleRecordRes> list(String creatorId, LocalDate startDate, LocalDate endDate) {
+    public List<SaleRecordRes> getSaleRecords(String creatorId, LocalDate startDate, LocalDate endDate) {
         if (startDate != null && endDate != null) {
             return saleRecordRepository.findByCreatorIdAndPaidAtBetween(
                             creatorId,
@@ -56,6 +56,13 @@ public class SaleRecordService {
                     ).stream()
                     .map(SaleRecordRes::from)
                     .toList();
+        }
+        else if (startDate == null && endDate != null) {
+            return saleRecordRepository.findByCreatorIdAndPaidAtEnd(creatorId, endDate.atTime(LocalTime.MAX))
+                    .stream().map(SaleRecordRes::from).toList();
+        } else if(startDate != null) {
+            return saleRecordRepository.findByCreatorIdAndPaidAtStart(creatorId, startDate.atStartOfDay())
+                    .stream().map(SaleRecordRes::from).toList();
         }
         return saleRecordRepository.findAllByCreatorId(creatorId).stream()
                 .map(SaleRecordRes::from)

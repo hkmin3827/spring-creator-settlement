@@ -6,7 +6,7 @@
 
 ## 프로젝트 개요
 
-크리에이터(강의 제작자)가 보유한 강의의 판매 내역과 취소(환불) 내역을 기반으로 월별 정산 금액을 계산하고, 정산 확정 및 지급 처리를 수행합니다. 관리자는 특정 기간 내 전체 크리에이터의 정산 현황을 집계하여 조회할 수 있습니다.
+크리에이터(강의 제작자)가 보유한 강의의 판매 내역과 취소(환불) 내역을 기반으로 월별 정산 금액을 계산하고, 정산 확정 및 지급 처리를 수행합니다. 운영자는 특정 기간 내 전체 크리에이터의 정산 현황을 집계하여 조회할 수 있습니다.
 
 ---
 
@@ -85,7 +85,44 @@ PostgreSQL이 로컬에서 실행 중이어야 합니다.
 
 모든 API는 URL 버전(`version = "v1"`, path segment = 1)을 사용합니다.
 
-### 판매 내역
+### 판매 내역 API
+
+| Method    | Endpoint                                                                       | 설명   |
+|-----------|--------------------------------------------------------------------------------|--------|
+| `POST`    | /api/v1/sale-record                                                            | 판매 내역 등록    |
+| `GET`      | /api/v1/sale-record?creatorId=creator-3&startDate=2025-01-31&endDate2025-03-31 | 크리에이터 기간별 판매 내역 조회 |
+
+### 취소 내역 API
+
+| Method    | Endpoint              | 설명       |
+|-----------|-----------------------|----------|
+| `POST`    | /api/v1/cancel-record | 취소 내역 생성 |
+
+### 정산 (크리에이터용) API
+
+| Method | Endpoint                                                                       | 설명                 |
+|--------|--------------------------------------------------------------------------------|--------------------|
+| `GET`  | /api/v1/settlement/creator/{creatorId}?yearMonth=2026-03                        | 크리에이터 월별 정산 조회     |
+
+### 정산 (운영자용) API
+
+| Method | Endpoint                                                         | 설명                                                                |
+|--------|------------------------------------------------------------------|-------------------------------------------------------------------|
+| `GET`  | /api/v1/operator/settlement?startDate=2026-03-01&endDate=2026-03-31 | 기간 내 크리에이터 정산 현황 목록 조회                                            |
+| `POST` | /api/v1/operator/settlement/{settlementId}/pay                      | 정산 완료 시 호출 (정산 상태 변경: CONFIRM => PAID)                            |
+
+
+
+### 정산 (관리자용) API - 배치 스케쥴러 실패 수동 처리용
+
+| Method | Endpoint                         | 설명                                                                |
+|--------|----------------------------------|-------------------------------------------------------------------|
+| `POST` | /api/v1/admin/settlement/create  | 관리자 수동 Settlement(정산 이벤트 마커; 상태관리) 생성                             |
+| `POST` | /api/v1/admin/settlement/confirm | 관리자 수동 확정 (PENDING -> CONFIRM 상태 변경 및 정산 내역(SettlementRecord) 생성) |
+
+
+
+### API 상세 설명 및 예시
 
 #### 판매 등록
 
@@ -96,12 +133,21 @@ Content-Type: application/json
 {
   "courseId": "course-10",
   "studentId": "student-1",
-  "amount": 99000.00,
+  "amount": 99000,
   "paidAt": "2025-03-15T14:00:00"
 }
 ```
 
-- `amount`: 최대 6자리 정수 + 소수점 2자리 (최대 999999.99). 실질적으로 강의료 제약(precision=8, scale=2)에 따라 최대 99만원.
+응답 - 201(CREATED): 
+
+```
+{
+    id: "sale-1"
+}
+```
+
+
+- `amount`: 최대 6자리 정수로 제한(최대 999,999만원). 실질적으로 강의료 또한 제약(precision=8, scale=2)에 따라 최대 99만원.
 - `amount`가 해당 강의의 등록 가격(`course.price`)을 초과하면 `INVALID_SALE_RECORD_AMOUNT` 오류를 반환합니다.
 - 동일한 `courseId + studentId` 조합은 DB unique 제약으로 중복 등록이 차단됩니다.
 
@@ -111,27 +157,64 @@ Content-Type: application/json
 GET /api/v1/sale-record?creatorId=creator-10&startDate=2025-03-01&endDate=2025-03-31
 ```
 
-- `startDate`, `endDate`는 선택값입니다. 없으면 해당 크리에이터의 전체 내역을 반환합니다.
+응답:
+
+```
+{
+    "id": "sale-1",
+    "courseId": "course-1"
+    "studentId": "student-3"
+    "amount": 30000
+    "paidAt": "2026-03-10T10:00:00",
+    "status": "PAID"
+},
+{
+    "id": "sale-3",
+    "courseId": "course-4"
+    "studentId": "student-2"
+    "amount": 80000
+    "paidAt": "2026-03-11T10:00:00",
+    "status": "PAID"
+},
+{
+    "id": "sale-10",
+    "courseId": "course-7"
+    "studentId": "student-5"
+    "amount": 50000
+    "paidAt": "2026-03-13T10:00:00",
+    "status": "PAID"
+}, 
+    .....
+```
+
+- `startDate`, `endDate`는 선택값입니다. 두개 다 없으면 해당 크리에이터의 전체 내역을 반환합니다.
+- `startDate`가 없으면 `paidAt`이 `endDate`까지인 판매 내역을 전부 반환합니다.
+- `endDate`가 없으면 `paidAt`이 `startDate`부터 현재까지인 내역을 전부 반환합니다.
 
 ---
-
-### 취소 내역
 
 #### 취소(환불) 등록
 
 ```
 POST /api/v1/cancel-record
 Content-Type: application/json
+```
+
+응답:
+
+```
 
 {
-  "saleRecordId": "sale-10",
-  "refundAmount": 99000.00,
-  "cancelledAt": "2025-03-20T10:00:00"
+    "id": "cancel-5"
+    "saleRecordId": "sale-10",
+    "refundAmount": 5000,
+    "cancelledAt": "2025-03-20T10:00:00"
 }
 ```
 
+** 취소 내역은 수강생이 취소 후 취소 완료 내역 모달창을 UI에 띄워주면 좋을 거 같아, DTO 반환 형식으로 유지하였습니다. **
 - 이미 취소된 판매 건에 대해 재취소 시도 시 `ALREADY_CANCELLED` 오류를 반환합니다.
-- 취소 시 비관적 락(Pessimistic Write Lock)으로 동시 취소 요청을 제어합니다.
+- 취소 시 saleRecordRepository.findByIdWithPessimisticLock() 비관적 락으로 동시 취소 요청을 제어합니다.
 - `saleRecordId`에 unique 제약 — 동일한 판매 건에 대한 중복 취소 등록이 DB 수준에서 차단됩니다.
 
 ---
@@ -146,48 +229,47 @@ GET /api/v1/settlement/creator/{creatorId}?yearMonth=2025-03
 
 응답:
 
-```json
+```
 {
   "creatorId": "creator-10",
-  "creatorName": "홍길동",
+  "creatorName": "강강사",
   "yearMonth": "2025-03",
-  "status": "PENDING",
+  "status": "CONFIRM",
   "totalAmount": 300000,
   "refundAmount": 50000,
   "netAmount": 250000,
   "commissionRate": 0.20,
   "commissionAmount": 50000,
   "expectedSettleAmount": 200000,
-  "sellCount": 3,
+  "sellCount": 5,
   "cancelCount": 1
-}
+},
+...
 ```
 
-- `PENDING`: 정산 확정 전 — 현재 월 포함, 항상 실시간 계산
+- `PENDING`: 정산 확정 전 대기 상태 — 현재 월 포함, 항상 실시간 계산
 - `CONFIRMED`: 정산 확정됨 — confirm 시점 SettlementRecord 스냅샷에서 조회
 - `PAID`: 지급 완료 — 동일 SettlementRecord 스냅샷에서 조회
-- 금액 필드는 소수점 trailing zeros를 제거한 정수형으로 반환합니다.
 
 ---
 
-### 정산 (관리자)
+### 정산 (운영자)
 
-> 정산 생성·확정·지급 처리는 모두 관리자 전용 엔드포인트로 분리되었습니다.
+> 정산 생성·확정·지급 처리는 모두 운영자 전용 엔드포인트로 분리되었습니다.
 
-#### 관리자 정산 집계 조회
+#### 운영자 정산 집계 조회
 
 ```
-GET /api/v1/admin/settlement?startDate=2025-03-01&endDate=2025-03-31
+GET /api/v1/operator/settlement?startDate=2025-03-01&endDate=2025-03-31
 ```
 
-응답:
 
-```json
+```
 {
   "entries": [
     {
       "creatorId": "creator-10",
-      "creatorName": "홍길동",
+      "creatorName": "윤강사",
       "totalAmount": 500000,
       "refundAmount": 100000,
       "netAmount": 400000,
@@ -195,11 +277,38 @@ GET /api/v1/admin/settlement?startDate=2025-03-01&endDate=2025-03-31
       "expectedSettleAmount": 320000,
       "sellCount": 5,
       "cancelCount": 1
+    },
+    {
+      "creatorId": "creator-14",
+      "creatorName": "마강사",
+      "totalAmount": 800000,
+      "refundAmount": 200000,
+      "netAmount": 600000,
+      "commissionAmount": 120000,
+      "expectedSettleAmount": 480000,
+      "sellCount": 8,
+      "cancelCount": 2
     }
-  ],
-  "totalSettlementAmount": 320000
+],
+  "totalSettlementAmount": 800000
 }
 ```
+
+#### 운영자 지급 처리 (CONFIRMED → PAID)
+
+
+```
+POST /api/v1/operator/settlement/{settlementId}/pay
+```
+
+- CONFIRMED 상태의 정산만 PAID로 전환 가능 (`INVALID_STATUS_TO_SETTLE`)
+- 이미 PAID 상태이면 `ALREADY_PAID_SETTLEMENT` 오류 반환
+- `Settlement.@Version` 낙관적 락으로 동시 호출 시 `CONCURRENT_UPDATE_CONFLICT` 오류 반환
+- 금액 스냅샷은 confirm 시점에 이미 생성된 `SettlementRecord`를 그대로 사용
+
+
+
+### 정산 (관리자)
 
 #### 관리자 정산 수동 생성 (PENDING)
 
@@ -212,7 +321,9 @@ Content-Type: application/json
   "yearMonth": "2025-03"
 }
 ```
-
+```
+204 No Content
+```
 - PENDING 상태의 Settlement를 생성합니다. 배치 실패 등으로 누락된 경우 수동 처리용입니다.
 
 #### 관리자 정산 수동 확정 (PENDING → CONFIRMED)
@@ -226,21 +337,14 @@ Content-Type: application/json
   "yearMonth": "2025-03"
 }
 ```
+```
+204 No Content
+```
 
-- 내부적으로 `createPending()` → `confirmPending()` 순서로 실행됩니다.
+- 내부적으로 배치 스케쥴러가 `createPending()` → `confirmPending()` 순서로 실행됩니다.
 - 해당 월이 완전히 종료되지 않으면 확정 불가 (`SETTLEMENT_MONTH_NOT_ENDED`)
 - 이미 CONFIRMED 또는 PAID 상태면 중복 확정 불가 (`ALREADY_CONFIRMED_SETTLEMENT`)
 
-#### 관리자 지급 처리 (CONFIRMED → PAID)
-
-```
-POST /api/v1/admin/settlement/{settlementId}/pay
-```
-
-- CONFIRMED 상태의 정산만 PAID로 전환 가능 (`INVALID_STATUS_TO_SETTLE`)
-- 이미 PAID 상태이면 `ALREADY_PAID_SETTLEMENT` 오류 반환
-- `Settlement.@Version` 낙관적 락으로 동시 호출 시 `CONCURRENT_UPDATE_CONFLICT` 오류 반환
-- 금액 스냅샷은 confirm 시점에 이미 생성된 `SettlementRecord`를 그대로 사용
 
 ---
 
@@ -248,9 +352,9 @@ POST /api/v1/admin/settlement/{settlementId}/pay
 
 ```
 Creator
-  └── Course (1:N, creatorId FK)
-        └── SaleRecord (1:N, courseId FK)
-              └── CancelRecord (1:1, saleRecordId FK)
+  └── Course (creatorId 참조)
+        └── SaleRecord (courseId, studendId(추후) 참조)
+              └── CancelRecord (saleRecordId 참조)
 
 Settlement (월별 정산 마커, creator_id + year_month unique)
   └── SettlementRecord (PAID 시점 스냅샷, settlementId FK)
@@ -267,9 +371,11 @@ Settlement (월별 정산 마커, creator_id + year_month unique)
 | `Settlement` | `settlements` | 정산 이벤트 마커. status(PENDING/CONFIRMED/PAID), creator_id+year_month unique. `@Version` 낙관적 락으로 markAsPaid 동시 호출 방지 |
 | `SettlementRecord` | `settlement_records` | confirm 시점 금액 스냅샷. creator_id+year_month unique, settlement_id unique. 사후 환불 발생 시 수정 가능 |
 
+- SettlementRecord는 수수료와 정산금의 실제 계산값(소수값 포함, 소수점 이하 4자리)을 저장합니다. api 호출 시 반환은 전부 정수로 반환됩니다.
+
 ### Money 값 객체
 
-`BigDecimal`을 래핑한 불변 레코드입니다. scale=2(HALF_UP)를 강제하며, 음수 결과가 나오는 연산 시 `BusinessException`을 발생시킵니다.
+`BigDecimal`을 래핑한 불변 레코드입니다. 음수 결과가 나오는 연산 시 `BusinessException`을 발생시킵니다.
 
 ### 수수료율
 
@@ -368,7 +474,7 @@ userName **Spring Caffeine Cache** 이용한 캐싱 전략으로 변경
 ### 5. 월말 배치 스케줄러 (Spring Batch)
 
 **월초(매월 1일 00:05 KST) 배치로 전월 전체 크리에이터를 일괄 confirm**하는 방식을 사용합니다.
-판매금액 0원 크리에이터도 포함해야 감사 추적이 가능하고, 관리자가 "이번 달 정산 대상 전체 목록"을 뽑을 수 있습니다.
+판매금액 0원 크리에이터도 포함해야 감사 추적이 가능하고, 운영자가 "이번 달 정산 대상 전체 목록"을 뽑을 수 있습니다.
 
 Spring Batch `Reader → Processor → Writer` 구조로 구현되었습니다.
 
@@ -386,9 +492,9 @@ Spring Batch `Reader → Processor → Writer` 구조로 구현되었습니다.
 
 `!YearMonth.now().isAfter(targetYearMonth)` 조건으로 당월 또는 미래 월 정산 생성을 차단.
 
-### 7. AdminSettlementRes 팩토리 메서드 패턴 — Money → BigDecimal 변환 책임 분리
+### 7. OperatorSettlementRes 팩토리 메서드 패턴 — Money → BigDecimal 변환 책임 분리
 
-`AdminSettlementQueryService`에서 직접 `totalAmount.amount()`를 호출해 `BigDecimal`을 뽑아 생성자에 전달하던 방식에서, `AdminSettlementRes.from()` / `CreatorSettlementEntry.of()` 정적 팩토리 메서드로 변환 책임을 DTO 안으로 이동했습니다. `stripTrailingZeros()`로 소수점 trailing zeros를 제거하고, 음수 scale 시 `setScale(0)` 처리를 내부에서 통일합니다.
+`OperatorSettlementQueryService`에서 직접 `totalAmount.amount()`를 호출해 `BigDecimal`을 뽑아 생성자에 전달하던 방식에서, `OperatorSettlementRes.from()` / `CreatorSettlementEntry.of()` 정적 팩토리 메서드로 변환 책임을 DTO 안으로 이동했습니다. `stripTrailingZeros()`로 소수점 trailing zeros를 제거하고, 음수 scale 시 `setScale(0)` 처리를 내부에서 통일합니다.
 
 ### 8. Object[] 대신 JPQL 생성자 표현식으로 타입 안전한 집계 DTO 사용
 
@@ -396,18 +502,18 @@ Spring Batch `Reader → Processor → Writer` 구조로 구현되었습니다.
 
 ### 9. 크리에이터 이름 조회 — 루프 내 단건 호출 → 벌크 조회로 변경
 
-관리자 집계 API(`getAdminAggregate`)에서 크리에이터별로 루프를 돌며 `getCreatorName(creatorId)`를 반복 호출하는 N+1 구조를 `getCreatorNames(Set<String>)`로 교체. `findAllById`로 한 번에 조회 후 Map으로 변환.
+운영자 집계 API(`getOperatorAggregate`)에서 크리에이터별로 루프를 돌며 `getCreatorName(creatorId)`를 반복 호출하는 N+1 구조를 `getCreatorNames(Set<String>)`로 교체. `findAllById`로 한 번에 조회 후 Map으로 변환.
 
-### 10. 관리자 정산 컨트롤러 분리 — 책임 경계 명확화
+### 10. 운영자 정산 컨트롤러 분리 — 책임 경계 명확화
 
-기존 `SettlementController`에 있던 `confirm`, `markAsPaid` 엔드포인트를 `AdminSettlementController`로 이동했습니다. 크리에이터용 컨트롤러는 조회(`GET`)만 담당하고, 상태 전환은 관리자 전용으로 분리하여 향후 Spring Security 권한 적용 범위를 명확히 합니다.
+기존 `SettlementController`에 있던 `confirm`, `markAsPaid` 엔드포인트를 `OperatorSettlementController`로 이동했습니다. 크리에이터용 컨트롤러는 조회(`GET`)만 담당하고, 상태 전환은 운영자 전용으로 분리하여 향후 Spring Security 권한 적용 범위를 명확히 합니다.
 
 ---
 
 ## 미구현 / 제약사항
 - **SettlementController의 월별 정산 내역 조회, creatorId 값을 요청으로 받아서 처리**: Spring Security 검증 시 @Authentication과 같은 저장된 로그인 컨텍스트 값으로 변경 필요합니다.
-- **관리자 권한으로 크리에이터 정산 가능**: 크리에이터에게 정산금을 지불하는 계정은 관리자라고 전제, 혹여 관리자가 아닌 직원 권한이 있다면, 권한 수정 필요
-- **관리자 전체 정산 내역 조회 대상 - 모든 크리에이터(탈퇴 여부 필터링 X)**: 크리에이터를 findAll()로 조회하도록 구현. 추후 getAllCreatorNames()의 메서드명과 내부 findAll만 변경하면 softDelete 조건 추가 가능
+- **운영자 권한으로 크리에이터 정산 가능**: 크리에이터에게 정산금을 지불하는 계정은 운영자(operator)라고 전제.
+- **운영자 전체 정산 내역 조회 대상 - 모든 크리에이터(탈퇴 여부 필터링 X)**: 크리에이터를 findAll()로 조회하도록 구현. 추후 getAllCreatorNames()의 메서드명과 내부 findAll만 변경하면 softDelete 조건 추가 가능
 - **크리에이터/강의 등록 API 없음**: 초기 데이터는 `DataInitializer`(서버 시작 시 더미 데이터 삽입)로만 제공됩니다.
 - **SaleRecord PAID, CANCELLED로 상태 제한**: 결제 실패로 인한 강의 구매 시도 이력을 저장 하려면 FAILED와 같은 값을 추가하면 좋겠으나, 결제 로직의 구조가 제시되지 않아 결제 확정 시 판매 내역 생성 메서드 호출로 가정하고 paidAt을 생성시점에 stamp 되도록 하였습니다. 추후 이력을 남기고 싶으면 FAILED status 추가나 별도 Record 추가로 관리할 수 있습니다.
 - **IdGenerator 재시작 시 초기화**: 운영 환경에서는 UUID 또는 DB 시퀀스 기반 ID 전략 교체가 필요합니다.
@@ -427,7 +533,7 @@ Spring Batch `Reader → Processor → Writer` 구조로 구현되었습니다.
 #### 2. 현재 월 중간 정산 금액 확인 가능
 - Settlement를 생성하고 계산값을 update하는 방식이 아닌, 계산 후 다음 월초 배치로 Settlement와 SettlementRecord를 생성합니다.
 - aggregate는 후생성 방식이 아니어도 필요한 과정이고, calculate 메서드 추가로 성능 저하는 미미하다고 판단하고 get 메서드 호출 시 즉시 계산하므로 현재 진행중인 월의 정산에 필요한 데이터도 조회 가능합니다.
-- 관리자 정산 내역 집계도 월초월말이 아닌 상세 월일 지정으로 조회 가능합니다.
+- 운영자 정산 내역 집계도 월초월말이 아닌 상세 월일 지정으로 조회 가능합니다.
 
 #### 3. Money VO로 유효성 검증 추가
 - 최대 강의 금액을 99만원으로 제한하여, 잘못된 입력 값이나, 강사 입력 실수로 인해 백만원 단위의 값이 요청으로 들어오면 예외를 반환합니다.
@@ -460,5 +566,5 @@ chore한 작업은 직접 작성 / 모든 설계에 주도적으로 지시하고
 - **@EnableCaching 위치 조정**: `@DataJpaTest` 슬라이스 테스트에서 캐시 빈 누락 오류가 발생하여, `@EnableCaching`을 `CacheConfig`로 이동하는 방식으로 해결했습니다.
 - **Spring Boot 4.x 패키지 변경 대응**: `@DataJpaTest` 관련 패키지가 변경된 것을 파악하여 테스트 코드를 수정했습니다.
 - **Spring Batch 월별 정산 자동화**: `Reader → Processor → Writer` 구조 설계 및 구현. Processor의 중복 처리 방지 필터링, `faultTolerant` 스킵 정책, 스케줄러와의 연동 방식을 포함합니다.
-- **AdminSettlementRes 팩토리 메서드 도입**: Money→BigDecimal 변환과 trailing zeros 정리 책임을 서비스에서 DTO 안으로 이동하는 리팩토링을 제안하고 구현했습니다.
+- **OperatorSettlementRes 팩토리 메서드 도입**: Money→BigDecimal 변환과 trailing zeros 정리 책임을 서비스에서 DTO 안으로 이동하는 리팩토링을 제안하고 구현했습니다.
 - **SettlementRecordService 분리**: 금액 계산과 SettlementRecord 생성 로직을 SettlementService에서 분리하여 단일 책임 원칙을 적용했습니다.

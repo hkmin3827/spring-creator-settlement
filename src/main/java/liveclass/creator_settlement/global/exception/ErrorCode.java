@@ -13,6 +13,7 @@ public enum ErrorCode {
     SETTLEMENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "해당 월의 정산이 이미 확정되었습니다."),
     INVALID_SETTLEMENT_STATUS(HttpStatus.BAD_REQUEST, "정산 상태 변경이 불가합니다."),
     LOCK_ACQUISITION_FAILED(HttpStatus.CONFLICT, "동시 요청으로 처리가 지연되었습니다. 다시 시도해 주세요."),
+    INVALID_MONEY_VALUE(HttpStatus.BAD_REQUEST, "모든 금액은 음수일 수 없습니다."),
     INVALID_MONEY_ARITHMETIC(HttpStatus.UNPROCESSABLE_CONTENT, "잘못된 금액 계산 요청입니다: 결과값이 음수이거나 제약 조건을 위반했습니다."),
     SETTLEMENT_MONTH_NOT_ENDED(HttpStatus.BAD_REQUEST, "아직 종료되지 않은 월의 정산은 확정할 수 없습니다."),
     YEAR_MONTH_BAD_REQUEST(HttpStatus.BAD_REQUEST, "현재 년월보다 이후인 년월 값은 입력될 수 없습니다."),
