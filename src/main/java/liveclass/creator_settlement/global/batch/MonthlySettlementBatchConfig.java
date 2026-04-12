@@ -1,8 +1,10 @@
 package liveclass.creator_settlement.global.batch;
 
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.OptimisticLockException;
 import liveclass.creator_settlement.app.settlement.dto.SettlementBatchItem;
 import liveclass.creator_settlement.domain.creator.Creator;
+import liveclass.creator_settlement.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.Job;
@@ -14,6 +16,10 @@ import org.springframework.batch.infrastructure.item.database.JpaPagingItemReade
 import org.springframework.batch.infrastructure.item.database.builder.JpaPagingItemReaderBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.DeadlockLoserDataAccessException;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @Configuration
@@ -35,15 +41,22 @@ public class MonthlySettlementBatchConfig {
     public Step monthlySettlementStep(
             JpaPagingItemReader<Creator> creatorItemReader,
             SettlementItemProcessor processor,
-            SettlementItemWriter writer) {
+            SettlementItemWriter writer,
+            SettlementSkipListener skipListener) {
         return new StepBuilder("monthlySettlementStep", jobRepository)
                 .<Creator, SettlementBatchItem>chunk(50)
                 .reader(creatorItemReader)
                 .processor(processor)
                 .writer(writer)
                 .faultTolerant()
-                .skip(Exception.class)
-                .skipLimit(Integer.MAX_VALUE)
+                .skip(BusinessException.class)
+                .skipLimit(10)
+                .retry(DataAccessResourceFailureException.class)
+                .retry(PessimisticLockingFailureException.class)
+                .retry(ObjectOptimisticLockingFailureException.class)
+                .retry(OptimisticLockException.class)
+                .retryLimit(2)
+                .listener(skipListener)
                 .build();
     }
 

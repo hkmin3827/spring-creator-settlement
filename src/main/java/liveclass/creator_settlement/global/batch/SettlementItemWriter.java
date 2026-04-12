@@ -21,9 +21,6 @@ public class SettlementItemWriter implements ItemWriter<SettlementBatchItem> {
     public void write(Chunk<? extends SettlementBatchItem> chunk) {
         for (SettlementBatchItem item : chunk) {
             String settlementId = settlementService.createPending(item.creatorId(), item.yearMonth());
-            if (settlementId == null) {
-                continue;
-            }
             settlementService.confirmPending(settlementId);
             log.info("정산 확정 완료 - creatorId: {}, yearMonth: {}", item.creatorId(), item.yearMonth());
         }
