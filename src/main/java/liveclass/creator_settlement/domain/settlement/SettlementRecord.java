@@ -28,23 +28,23 @@ public class SettlementRecord {
     @Column(name = "year_month", nullable = false, length = 7, updatable = false)
     public String yearMonth;
 
-    @Column(name = "total_amount", nullable = false, updatable = false, precision = 8, scale = 2)
+    @Column(name = "total_amount", nullable = false, updatable = false, precision = 6)
     public BigDecimal totalAmount = BigDecimal.ZERO;
 
-    @Column(name = "refund_amount", nullable = false, precision = 8, scale = 2)
+    @Column(name = "refund_amount", nullable = false, precision = 6)
     public BigDecimal refundAmount = BigDecimal.ZERO;
 
-    @Column(name = "net_amount", nullable = false, precision = 8, scale = 2)
+    @Column(name = "net_amount", nullable = false, precision = 6)
     public BigDecimal netAmount = BigDecimal.ZERO;
 
     @Column(name = "commission_rate", nullable = false, updatable = false, precision = 5, scale = 4)
     public BigDecimal commissionRate;
 
-    @Column(name = "commission_amount", nullable = false, precision = 8, scale = 2)
+    @Column(name = "commission_amount", nullable = false, precision = 10, scale = 4)
     public BigDecimal commissionAmount = BigDecimal.ZERO;
 
-    @Column(name = "expected_settle_amount", nullable = false, precision = 8, scale = 2)
-    public BigDecimal expectedSettleAmount = BigDecimal.ZERO;
+    @Column(name = "settle_amount", nullable = false, precision = 10, scale = 4)
+    public BigDecimal settleAmount = BigDecimal.ZERO;
 
     @Column(name = "sell_count", nullable = false, updatable = false)
     public long sellCount = 0L;
@@ -55,13 +55,10 @@ public class SettlementRecord {
     @CreationTimestamp
     public LocalDateTime confirmedAt;
 
-    @Column(name = "paid_at")
-    public LocalDateTime paidAt;
-
     public static SettlementRecord of(
             String id, String settlementId, String creatorId, String yearMonth,
             BigDecimal totalAmount, BigDecimal refundAmount, BigDecimal netAmount,
-            BigDecimal commissionRate, BigDecimal commissionAmount, BigDecimal expectedSettleAmount,
+            BigDecimal commissionRate, BigDecimal commissionAmount, BigDecimal settleAmount,
             long sellCount, long cancelCount) {
         SettlementRecord record = new SettlementRecord();
         record.id = id;
@@ -73,14 +70,9 @@ public class SettlementRecord {
         record.netAmount = netAmount;
         record.commissionRate = commissionRate;
         record.commissionAmount = commissionAmount;
-        record.expectedSettleAmount = expectedSettleAmount;
+        record.settleAmount = settleAmount;
         record.sellCount = sellCount;
         record.cancelCount = cancelCount;
         return record;
-    }
-
-
-    public void paySuccess() {
-        this.paidAt = LocalDateTime.now();
     }
 }

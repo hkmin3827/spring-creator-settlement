@@ -32,8 +32,11 @@ public class Settlement {
     @Column(updatable = false)
     public LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
-    public LocalDateTime updatedAt;
+    @Column(name = "confirmed_at")
+    public LocalDateTime confirmedAt;
+
+    @Column(name = "paid_at")
+    public LocalDateTime paidAt;
 
     @Version
     public Long version;
@@ -50,11 +53,11 @@ public class Settlement {
 
     public void confirm() {
         this.status = SettlementStatus.CONFIRMED;
-        this.updatedAt = LocalDateTime.now();
+        this.confirmedAt = LocalDateTime.now();
     }
 
     public void markAsPaid() {
         this.status = SettlementStatus.PAID;
-        this.updatedAt = LocalDateTime.now();
+        this.paidAt = LocalDateTime.now();
     }
 }

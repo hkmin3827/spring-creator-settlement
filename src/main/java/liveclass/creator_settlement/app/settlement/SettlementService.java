@@ -1,10 +1,6 @@
 package liveclass.creator_settlement.app.settlement;
 
-import liveclass.creator_settlement.app.creator.CreatorQueryService;
-import liveclass.creator_settlement.app.settlement.dto.SettlementRecordRes;
 import liveclass.creator_settlement.domain.settlement.Settlement;
-import liveclass.creator_settlement.domain.settlement.SettlementRecord;
-import liveclass.creator_settlement.domain.settlement.SettlementRecordRepository;
 import liveclass.creator_settlement.domain.settlement.SettlementRepository;
 import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
 import liveclass.creator_settlement.global.component.IdGenerator;
@@ -22,11 +18,7 @@ import java.time.YearMonth;
 public class SettlementService {
 
     private final SettlementRepository settlementRepository;
-    private final SettlementRecordRepository settlementRecordRepository;
-    private final CreatorQueryService creatorQueryService;
     private final IdGenerator idGenerator;
-    private final SettlementRecordService settlementRecordService;
-
 
     public String createPending(String creatorId, String yearMonth) {
         if (!YearMonth.now().isAfter(YearMonth.parse(yearMonth))) {
@@ -43,7 +35,7 @@ public class SettlementService {
         return newSm.id;
     }
 
-    public SettlementRecordRes confirmPending(String settlementId) {
+    public void confirmPending(String settlementId) {
         Settlement settlement = settlementRepository.findById(settlementId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND));
 
@@ -51,15 +43,10 @@ public class SettlementService {
             throw new BusinessException(ErrorCode.ALREADY_CONFIRMED_SETTLEMENT);
         }
 
-        SettlementRecord record = settlementRecordService.create(settlement);
-
         settlement.confirm();
-
-        String creatorName = creatorQueryService.getCreatorName(settlement.creatorId);
-        return SettlementRecordRes.from(record, SettlementStatus.CONFIRMED, creatorName);
     }
 
-    // 정산금 지급 완료 후 호출 (상태변경) ( CONFIRM -> PAID  + record에 paidAt 저장)
+    // 정산금 지급 완료 후 호출 (상태변경) ( CONFIRM -> PAID  + paidAt 저장)
     public void markAsPaid(String settlementId) {
         Settlement settlement = settlementRepository.findById(settlementId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND));
@@ -72,9 +59,5 @@ public class SettlementService {
         }
 
         settlement.markAsPaid();
-
-        SettlementRecord record = settlementRecordRepository.findBySettlementId(settlement.id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_RECORD_NOT_FOUND));
-        record.paySuccess();
     }
 }

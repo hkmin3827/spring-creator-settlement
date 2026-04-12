@@ -1,7 +1,7 @@
 package liveclass.creator_settlement.app.settlement;
 
 import liveclass.creator_settlement.app.creator.CreatorQueryService;
-import liveclass.creator_settlement.app.settlement.dto.SettlementRecordRes;
+import liveclass.creator_settlement.app.settlement.dto.MonthlySettlementRecordRes;
 import liveclass.creator_settlement.domain.cancelRecord.CancelRecord;
 import liveclass.creator_settlement.domain.cancelRecord.CancelRecordRepository;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecord;
@@ -62,7 +62,7 @@ class SettlementQueryServiceTest {
                 .willReturn(Optional.of(settlement));
         given(settlementRecordRepository.findBySettlementId("settle-1")).willReturn(Optional.of(record));
 
-        SettlementRecordRes result = settlementQueryService.getMonthlySettlement("creator-1", YearMonth.of(2025, 3));
+        MonthlySettlementRecordRes result = settlementQueryService.getMonthlySettlement("creator-1", YearMonth.of(2025, 3));
 
         assertThat(result.status()).isEqualTo(SettlementStatus.CONFIRMED);
         assertThat(result.creatorName()).isEqualTo("홍길동");
@@ -91,7 +91,7 @@ class SettlementQueryServiceTest {
                 .willReturn(Optional.of(settlement));
         given(settlementRecordRepository.findBySettlementId("settle-1")).willReturn(Optional.of(record));
 
-        SettlementRecordRes result = settlementQueryService.getMonthlySettlement("creator-1", YearMonth.of(2025, 3));
+        MonthlySettlementRecordRes result = settlementQueryService.getMonthlySettlement("creator-1", YearMonth.of(2025, 3));
 
         assertThat(result.status()).isEqualTo(SettlementStatus.PAID);
         assertThat(result.creatorName()).isEqualTo("홍길동");
@@ -114,7 +114,7 @@ class SettlementQueryServiceTest {
         given(cancelRecordRepository.findByCreatorIdAndCancelledAtBetween(eq("creator-1"), any(), any()))
                 .willReturn(List.of(cancel));
 
-        SettlementRecordRes result = settlementQueryService.getMonthlySettlement("creator-1", YearMonth.of(2025, 3));
+        MonthlySettlementRecordRes result = settlementQueryService.getMonthlySettlement("creator-1", YearMonth.of(2025, 3));
 
         assertThat(result.status()).isEqualTo(SettlementStatus.PENDING);
         assertThat(result.creatorName()).isEqualTo("홍길동");

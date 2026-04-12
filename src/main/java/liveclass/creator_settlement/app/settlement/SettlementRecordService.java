@@ -44,8 +44,8 @@ public class SettlementRecordService {
                 calc.refundAmount(),
                 calc.netAmount(),
                 calc.commissionRate(),
-                calc.commissionAmount(),
-                calc.expectedSettleAmount(),
+                calc.netAmount().multiply(commissionRate),
+                calc.totalAmount().subtract(calc.netAmount()).multiply(commissionRate),
                 calc.sellCount(),
                 calc.cancelCount()
         );
@@ -71,6 +71,7 @@ public class SettlementRecordService {
                 .reduce(Money.ZERO, Money::add);
 
         Money netAmount = totalAmount.subtract(refundAmount);
+
         BigDecimal finalCommissionAmount = netAmount.amount().multiply(commissionRate).setScale(0, RoundingMode.DOWN);
         BigDecimal settlementAmount = netAmount.amount().subtract(finalCommissionAmount);
 

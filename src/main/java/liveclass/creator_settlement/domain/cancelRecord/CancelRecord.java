@@ -21,7 +21,7 @@ public class CancelRecord {
     @Column(name = "sale_record_id", nullable = false, updatable = false, unique = true)
     public String saleRecordId;
 
-    @Column(scale = 2, precision = 8, updatable = false)
+    @Column(precision = 6, updatable = false)
     public BigDecimal refundAmount;
 
     @CreationTimestamp

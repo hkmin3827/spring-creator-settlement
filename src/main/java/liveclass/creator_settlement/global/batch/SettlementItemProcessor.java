@@ -32,7 +32,7 @@ public class SettlementItemProcessor implements ItemProcessor<Creator, Settlemen
         if (settlementRepository.existsByCreatorIdAndYearMonthAndStatusIn(
                 creator.id, yearMonth,
                 List.of(SettlementStatus.CONFIRMED, SettlementStatus.PAID))) {
-            log.info("정산 이미 존재 - creatorId: {}, yearMonth: {}", creator.id, yearMonth);
+            log.info("***이미 존재하는 정산 - 스킵*** - creatorId: {}, yearMonth: {}", creator.id, yearMonth);
             return null;
         }
         return new SettlementBatchItem(creator.id, yearMonth);

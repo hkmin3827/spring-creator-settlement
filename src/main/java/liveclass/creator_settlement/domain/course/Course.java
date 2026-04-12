@@ -22,7 +22,7 @@ public class Course {
     @Column(length = 255)
     public String title;
 
-    @Column(precision = 8, scale =2, nullable = false)    // 최대 99만원
+    @Column(precision = 6, scale =0, nullable = false)    // 최대 99만원
     public BigDecimal price = BigDecimal.ZERO;
 
     public static Course of(String id, String creatorId, String title, BigDecimal price) {

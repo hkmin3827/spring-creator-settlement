@@ -4,8 +4,9 @@ import liveclass.creator_settlement.domain.settlement.SettlementRecord;
 import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
-public record SettlementRecordRes(
+public record MonthlySettlementRecordRes(
     String creatorId,
     String creatorName,
     String yearMonth,
@@ -19,25 +20,20 @@ public record SettlementRecordRes(
     long sellCount,
     long cancelCount
 ) {
-    public static SettlementRecordRes from(SettlementRecord record, SettlementStatus status, String creatorName) {
-        return new SettlementRecordRes(
+    public static MonthlySettlementRecordRes from(SettlementRecord record, SettlementStatus status, String creatorName) {
+        return new MonthlySettlementRecordRes(
                 record.creatorId,
                 creatorName,
                 record.yearMonth,
                 status,
-                strip(record.totalAmount),
-                strip(record.refundAmount),
-                strip(record.netAmount),
+                record.totalAmount,
+                record.refundAmount,
+                record.netAmount,
                 record.commissionRate,
-                strip(record.commissionAmount),
-                strip(record.expectedSettleAmount),
+                record.commissionAmount.setScale(0, RoundingMode.DOWN),
+                record.settleAmount.setScale(0, RoundingMode.UP),
                 record.sellCount,
                 record.cancelCount
         );
-    }
-
-    private static java.math.BigDecimal strip(java.math.BigDecimal value) {
-        java.math.BigDecimal stripped = value.stripTrailingZeros();
-        return stripped.scale() < 0 ? stripped.setScale(0) : stripped;
     }
 }

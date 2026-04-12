@@ -1,7 +1,7 @@
 package liveclass.creator_settlement.app.settlement;
 
 import liveclass.creator_settlement.app.creator.CreatorQueryService;
-import liveclass.creator_settlement.app.settlement.dto.AdminSettlementRes;
+import liveclass.creator_settlement.app.settlement.dto.OperatorSettlementRes;
 import liveclass.creator_settlement.app.settlement.dto.CreatorAggregationDto;
 import liveclass.creator_settlement.domain.cancelRecord.CancelRecordRepository;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
@@ -23,7 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
-class AdminSettlementQueryServiceTest {
+class OperatorSettlementQueryServiceTest {
     @Mock
     SaleRecordRepository saleRecordRepository;
     @Mock
@@ -31,15 +31,15 @@ class AdminSettlementQueryServiceTest {
     @Mock
     CreatorQueryService creatorQueryService;
     @InjectMocks
-    AdminSettlementQueryService adminSettlementQueryService;
+    OperatorSettlementQueryService operatorSettlementQueryService;
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(adminSettlementQueryService, "commissionRate", new BigDecimal("0.20"));
+        ReflectionTestUtils.setField(operatorSettlementQueryService, "commissionRate", new BigDecimal("0.20"));
     }
 
     @Test
-    void getAdminAggregate_판매_취소_집계_및_수수료_계산() {
+    void getOperatorAggregate_판매_취소_집계_및_수수료_계산() {
         given(saleRecordRepository.aggregateSalesByCreatorInRange(any(), any())).willReturn(List.of(
                 new CreatorAggregationDto("creator-1", new BigDecimal("500000"), 5L),
                 new CreatorAggregationDto("creator-2", new BigDecimal("200000"), 2L)
@@ -50,13 +50,13 @@ class AdminSettlementQueryServiceTest {
         given(creatorQueryService.getAllCreatorNames())
                 .willReturn(Map.of("creator-1", "홍길동", "creator-2", "김철수"));
 
-        AdminSettlementRes result = adminSettlementQueryService.getAdminAggregate(
+        OperatorSettlementRes result = operatorSettlementQueryService.getOperatorAggregate(
                 LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31)
         );
 
         assertThat(result.entries()).hasSize(2);
 
-        AdminSettlementRes.CreatorSettlementEntry creator1 = result.entries().stream()
+        OperatorSettlementRes.CreatorSettlementEntry creator1 = result.entries().stream()
                 .filter(e -> "creator-1".equals(e.creatorId()))
                 .findFirst().orElseThrow();
 
@@ -69,7 +69,7 @@ class AdminSettlementQueryServiceTest {
         assertThat(creator1.sellCount()).isEqualTo(5L);
         assertThat(creator1.cancelCount()).isEqualTo(1L);
 
-        AdminSettlementRes.CreatorSettlementEntry creator2 = result.entries().stream()
+        OperatorSettlementRes.CreatorSettlementEntry creator2 = result.entries().stream()
                 .filter(e -> "creator-2".equals(e.creatorId()))
                 .findFirst().orElseThrow();
 
@@ -81,7 +81,7 @@ class AdminSettlementQueryServiceTest {
     }
 
     @Test
-    void getAdminAggregate_판매내역_없는_크리에이터도_0으로_포함() {
+    void getOperatorAggregate_판매내역_없는_크리에이터도_0으로_포함() {
         given(saleRecordRepository.aggregateSalesByCreatorInRange(any(), any())).willReturn(List.of(
                 new CreatorAggregationDto("creator-1", new BigDecimal("300000"), 3L)
         ));
@@ -89,13 +89,13 @@ class AdminSettlementQueryServiceTest {
         given(creatorQueryService.getAllCreatorNames())
                 .willReturn(Map.of("creator-1", "홍길동", "creator-2", "김철수"));
 
-        AdminSettlementRes result = adminSettlementQueryService.getAdminAggregate(
+        OperatorSettlementRes result = operatorSettlementQueryService.getOperatorAggregate(
                 LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31)
         );
 
         assertThat(result.entries()).hasSize(2);
 
-        AdminSettlementRes.CreatorSettlementEntry creator2 = result.entries().stream()
+        OperatorSettlementRes.CreatorSettlementEntry creator2 = result.entries().stream()
                 .filter(e -> "creator-2".equals(e.creatorId()))
                 .findFirst().orElseThrow();
 
@@ -110,12 +110,12 @@ class AdminSettlementQueryServiceTest {
     }
 
     @Test
-    void getAdminAggregate_데이터_없으면_크리에이터만_0으로_반환() {
+    void getOperatorAggregate_데이터_없으면_크리에이터만_0으로_반환() {
         given(saleRecordRepository.aggregateSalesByCreatorInRange(any(), any())).willReturn(List.<CreatorAggregationDto>of());
         given(cancelRecordRepository.aggregateCancelsByCreatorInRange(any(), any())).willReturn(List.<CreatorAggregationDto>of());
         given(creatorQueryService.getAllCreatorNames()).willReturn(Map.of());
 
-        AdminSettlementRes result = adminSettlementQueryService.getAdminAggregate(
+        OperatorSettlementRes result = operatorSettlementQueryService.getOperatorAggregate(
                 LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31)
         );
 

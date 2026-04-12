@@ -5,14 +5,12 @@ import liveclass.creator_settlement.domain.vo.Money;
 import java.math.BigDecimal;
 import java.util.List;
 
-public record AdminSettlementRes(
+public record OperatorSettlementRes(
     List<CreatorSettlementEntry> entries,
     BigDecimal totalSettlementAmount
 ) {
-    public static AdminSettlementRes from(List<CreatorSettlementEntry> entries, Money totalSettlementAmount) {
-        BigDecimal stripped = totalSettlementAmount.amount().stripTrailingZeros();
-        BigDecimal total = stripped.scale() < 0 ? stripped.setScale(0) : stripped;
-        return new AdminSettlementRes(entries, total);
+    public static OperatorSettlementRes from(List<CreatorSettlementEntry> entries, BigDecimal totalSettlementAmount) {
+        return new OperatorSettlementRes(entries, totalSettlementAmount);
     }
 
     public record CreatorSettlementEntry(
@@ -29,22 +27,18 @@ public record AdminSettlementRes(
         public static CreatorSettlementEntry of(
                 String creatorId, String creatorName,
                 Money totalAmount, Money refundAmount, Money netAmount,
-                Money commissionAmount, Money expectedSettleAmount,
+                Money finalCommissionAmount, Money expectedSettleAmount,
                 long sellCount, long cancelCount) {
             return new CreatorSettlementEntry(
                     creatorId, creatorName,
-                    strip(totalAmount.amount()),
-                    strip(refundAmount.amount()),
-                    strip(netAmount.amount()),
-                    strip(commissionAmount.amount()),
-                    strip(expectedSettleAmount.amount()),
+                    totalAmount.amount(),
+                    refundAmount.amount(),
+                    netAmount.amount(),
+                    finalCommissionAmount.amount(),
+                    expectedSettleAmount.amount(),
                     sellCount, cancelCount
             );
         }
 
-        private static BigDecimal strip(BigDecimal value) {
-            BigDecimal stripped = value.stripTrailingZeros();
-            return stripped.scale() < 0 ? stripped.setScale(0) : stripped;
-        }
     }
 }

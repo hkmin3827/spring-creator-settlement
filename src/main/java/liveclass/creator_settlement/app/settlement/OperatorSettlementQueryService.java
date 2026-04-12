@@ -1,7 +1,7 @@
 package liveclass.creator_settlement.app.settlement;
 
 import liveclass.creator_settlement.app.creator.CreatorQueryService;
-import liveclass.creator_settlement.app.settlement.dto.AdminSettlementRes;
+import liveclass.creator_settlement.app.settlement.dto.OperatorSettlementRes;
 import liveclass.creator_settlement.app.settlement.dto.CreatorAggregationDto;
 import liveclass.creator_settlement.domain.cancelRecord.CancelRecordRepository;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class AdminSettlementQueryService {
+public class OperatorSettlementQueryService {
 
     private final SaleRecordRepository saleRecordRepository;
     private final CancelRecordRepository cancelRecordRepository;
@@ -31,7 +32,7 @@ public class AdminSettlementQueryService {
     @Value("${app.commission-rate}")
     private BigDecimal commissionRate;
 
-    public AdminSettlementRes getAdminAggregate(LocalDate startDate, LocalDate endDate) {
+    public OperatorSettlementRes getOperatorAggregate(LocalDate startDate, LocalDate endDate) {
         var start = startDate.atStartOfDay();
         var end = endDate.atTime(LocalTime.MAX);
 
@@ -55,28 +56,29 @@ public class AdminSettlementQueryService {
         Map<String, String> creatorNames = creatorQueryService.getAllCreatorNames();
         var allCreatorIds = creatorNames.keySet();
 
-        List<AdminSettlementRes.CreatorSettlementEntry> entries = new ArrayList<>();
+        List<OperatorSettlementRes.CreatorSettlementEntry> entries = new ArrayList<>();
         Money totalSettlement = Money.ZERO;
 
         for (String cId : allCreatorIds) {
             Money totalAmount = Money.of(saleTotals.getOrDefault(cId, BigDecimal.ZERO));
             Money refundAmount = Money.of(cancelTotals.getOrDefault(cId, BigDecimal.ZERO));
             Money netAmount = totalAmount.subtract(refundAmount);
-            Money commissionAmount = Money.of(netAmount.amount().multiply(commissionRate));
-            Money expectedSettleAmount = netAmount.subtract(commissionAmount);
+
+            Money finalCommissionAmount = Money.of(netAmount.amount().multiply(commissionRate).setScale(0, RoundingMode.DOWN));
+            Money expectedSettleAmount = netAmount.subtract(finalCommissionAmount);
 
             totalSettlement = totalSettlement.add(expectedSettleAmount);
 
-            entries.add(AdminSettlementRes.CreatorSettlementEntry.of(
+            entries.add(OperatorSettlementRes.CreatorSettlementEntry.of(
                     cId,
                     creatorNames.get(cId),
                     totalAmount, refundAmount, netAmount,
-                    commissionAmount, expectedSettleAmount,
+                    finalCommissionAmount, expectedSettleAmount,
                     saleCounts.getOrDefault(cId, 0L),
                     cancelCounts.getOrDefault(cId, 0L)
             ));
         }
 
-        return AdminSettlementRes.from(entries, totalSettlement);
+        return OperatorSettlementRes.from(entries, totalSettlement.amount());
     }
 }
