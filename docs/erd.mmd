@@ -11,13 +11,13 @@ erDiagram
     }
     COURSE {
         String id PK
-        String creator_id FK
+        String creator_id
         String title
         BigDecimal price
     }
     SALE_RECORD {
         String id PK
-        String course_id FK
+        String course_id
         String student_id
         String status
         BigDecimal amount
@@ -25,13 +25,13 @@ erDiagram
     }
     CANCEL_RECORD {
         String id PK
-        String sale_record_id FK
+        String sale_record_id
         BigDecimal refund_amount
         LocalDateTime cancelled_at
     }
     SETTLEMENT {
         String id PK
-        String creator_id FK
+        String creator_id
         String status
         String year_month
         LocalDateTime created_at
@@ -40,7 +40,7 @@ erDiagram
     }
     SETTLEMENT_RECORD {
         String id PK
-        String settlement_id FK
+        String settlement_id
         String creator_id
         String year_month
         BigDecimal total_amount
