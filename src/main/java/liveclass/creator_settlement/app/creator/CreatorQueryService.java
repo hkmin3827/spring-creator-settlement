@@ -1,5 +1,6 @@
 package liveclass.creator_settlement.app.creator;
 
+import liveclass.creator_settlement.app.creator.dto.CreatorNameDto;
 import liveclass.creator_settlement.domain.creator.CreatorRepository;
 import liveclass.creator_settlement.global.exception.BusinessException;
 import liveclass.creator_settlement.global.exception.ErrorCode;
@@ -27,9 +28,9 @@ public class CreatorQueryService {
     }
 
     public Map<String, String> getAllCreatorNames() {
-        return creatorRepository.findAll()
+        return creatorRepository.findIdAndName()
                 .stream()
-                .collect(Collectors.toMap(c -> c.id, c -> c.name));
+                .collect(Collectors.toMap(CreatorNameDto::id, CreatorNameDto::name));
     }
 
     @CacheEvict(value = "creator-name", key = "#creatorId")

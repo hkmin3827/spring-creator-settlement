@@ -6,7 +6,9 @@
 
 ## 프로젝트 개요
 
-크리에이터(강의 제작자)가 보유한 강의의 판매 내역과 취소(환불) 내역을 기반으로 월별 정산 금액을 계산하고, 정산 확정 및 지급 처리를 수행합니다. 운영자는 특정 기간 내 전체 크리에이터의 정산 현황을 집계하여 조회할 수 있습니다.
+크리에이터(강의 제작자)가 보유한 강의의 판매 내역과 취소(환불) 내역을 기반으로 월별 정산 금액을 계산하고, 정산 확정 및 지급 처리를 수행합니다. 
+
+운영자는 특정 기간 내 전체 크리에이터의 정산 현황을 집계하여 조회할 수 있습니다.
 
 ---
 
@@ -83,7 +85,7 @@ PostgreSQL이 로컬에서 실행 중이어야 합니다.
 
 ## API 목록 및 예시
 
-모든 API는 URL 버전(`version = "v1"`, path segment = 1)을 사용합니다.
+모든 API는 URL 버전(`version = "v1"`, PathSegment = 1)을 사용합니다.
 
 ### 판매 내역 API
 
@@ -106,10 +108,10 @@ PostgreSQL이 로컬에서 실행 중이어야 합니다.
 
 ### 정산 (운영자용) API
 
-| Method | Endpoint                                                         | 설명                                                                |
-|--------|------------------------------------------------------------------|-------------------------------------------------------------------|
-| `GET`  | /api/v1/operator/settlement?startDate=2026-03-01&endDate=2026-03-31 | 기간 내 크리에이터 정산 현황 목록 조회                                            |
-| `POST` | /api/v1/operator/settlement/{settlementId}/pay                      | 정산 완료 시 호출 (정산 상태 변경: CONFIRM => PAID)                            |
+| Method | Endpoint                                                         | 설명                                        |
+|--------|------------------------------------------------------------------|-------------------------------------------|
+| `GET`  | /api/v1/operator/settlement?startDate=2026-03-01&endDate=2026-03-31 | 기간 내 크리에이터 정산 현황 목록 조회                    |
+| `POST` | /api/v1/operator/settlement/{settlementId}/pay                      | 단건 정산 완료 시 호출 (정산 상태 변경: CONFIRM => PAID) |
 
 
 
@@ -270,24 +272,12 @@ GET /api/v1/operator/settlement?startDate=2025-03-01&endDate=2025-03-31
     {
       "creatorId": "creator-10",
       "creatorName": "윤강사",
-      "totalAmount": 500000,
-      "refundAmount": 100000,
-      "netAmount": 400000,
-      "commissionAmount": 80000,
-      "expectedSettleAmount": 320000,
-      "sellCount": 5,
-      "cancelCount": 1
+      "expectedSettleAmount": 320000
     },
     {
       "creatorId": "creator-14",
       "creatorName": "마강사",
-      "totalAmount": 800000,
-      "refundAmount": 200000,
-      "netAmount": 600000,
-      "commissionAmount": 120000,
-      "expectedSettleAmount": 480000,
-      "sellCount": 8,
-      "cancelCount": 2
+      "expectedSettleAmount": 480000
     }
 ],
   "totalSettlementAmount": 800000

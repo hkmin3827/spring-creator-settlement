@@ -12,7 +12,10 @@ import liveclass.creator_settlement.global.exception.BusinessException;
 import liveclass.creator_settlement.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.domain.Pageable;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -89,6 +92,24 @@ public class SettlementService {
         }
 
         settlement.markAsPaid();
+    }
+
+    public int bulkAsPaidMonthly(YearMonth yearMonth) {
+        try {
+            int updateCount = settlementRepository.bulkUpdateStatus(yearMonth.toString(), SettlementStatus.PAID, SettlementStatus.CONFIRMED);
+            if (updateCount == 0) {
+                throw new BusinessException(ErrorCode.NO_CONFIRMED_SETTLEMENTS);
+            }
+            return updateCount;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (QueryTimeoutException e) {
+            throw new BusinessException(ErrorCode.QUERY_TIMEOUT);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorCode.DB_CONSTRAINT_VIOLATION);
+        } catch (JpaSystemException e) {
+            throw new BusinessException(ErrorCode.DB_CONSTRAINT_VIOLATION);
+        }
     }
 
 

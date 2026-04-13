@@ -62,21 +62,13 @@ class OperatorSettlementQueryServiceTest {
                 .findFirst().orElseThrow();
 
         assertThat(creator1.creatorName()).isEqualTo("홍길동");
-        assertThat(creator1.totalAmount()).isEqualByComparingTo(new BigDecimal("500000"));
-        assertThat(creator1.refundAmount()).isEqualByComparingTo(new BigDecimal("100000"));
-        assertThat(creator1.netAmount()).isEqualByComparingTo(new BigDecimal("400000"));
-        assertThat(creator1.commissionAmount()).isEqualByComparingTo(new BigDecimal("80000.00"));
         assertThat(creator1.expectedSettleAmount()).isEqualByComparingTo(new BigDecimal("320000.00"));
-        assertThat(creator1.sellCount()).isEqualTo(5L);
-        assertThat(creator1.cancelCount()).isEqualTo(1L);
 
         OperatorSettlementRes.CreatorSettlementEntry creator2 = result.entries().content().stream()
                 .filter(e -> "creator-2".equals(e.creatorId()))
                 .findFirst().orElseThrow();
 
-        assertThat(creator2.netAmount()).isEqualByComparingTo(new BigDecimal("200000"));
         assertThat(creator2.expectedSettleAmount()).isEqualByComparingTo(new BigDecimal("160000.00"));
-        assertThat(creator2.cancelCount()).isEqualTo(0L);
 
         assertThat(result.totalSettlementAmount()).isEqualByComparingTo(new BigDecimal("480000.00"));
     }
@@ -101,13 +93,7 @@ class OperatorSettlementQueryServiceTest {
                 .findFirst().orElseThrow();
 
         assertThat(creator2.creatorName()).isEqualTo("김철수");
-        assertThat(creator2.totalAmount()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(creator2.refundAmount()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(creator2.netAmount()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(creator2.commissionAmount()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(creator2.expectedSettleAmount()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(creator2.sellCount()).isEqualTo(0L);
-        assertThat(creator2.cancelCount()).isEqualTo(0L);
     }
 
     @Test

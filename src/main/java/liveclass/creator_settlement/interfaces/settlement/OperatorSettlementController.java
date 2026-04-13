@@ -36,4 +36,10 @@ public class OperatorSettlementController {
         settlementService.markAsPaid(settlementId);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping(value = "/bulk-pay", version = "v1")
+    public ResponseEntity<Integer> bulkAsPaidMonthly(@RequestParam YearMonth yearMonth) {
+        int count = settlementService.bulkAsPaidMonthly(yearMonth);
+        return ResponseEntity.ok(count);
+    }
 }

@@ -2,6 +2,9 @@ package liveclass.creator_settlement.global.handler;
 
 import liveclass.creator_settlement.global.exception.BusinessException;
 import liveclass.creator_settlement.global.exception.ErrorCode;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -13,8 +16,18 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.time.YearMonth;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleAllUncaughtException(Exception e) {
+        log.error("Unhandled Exception Occurred: ", e);
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("message", "알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해보주세요. 재시도 실패 시 관리자에게 문의해주세요."));
+    }
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Map<String, String>> handleBusinessException(BusinessException e) {
@@ -61,5 +74,21 @@ public class GlobalExceptionHandler {
                     .body(Map.of("message", ErrorCode.INVALID_YEAR_MONTH_INPUT_VALUE.message));
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", ErrorCode.INVALID_INPUT_TYPE.message));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, String>> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
+        log.error("DataIntegrityViolationException: ", e);
+        return ResponseEntity
+                .status(ErrorCode.DB_CONSTRAINT_VIOLATION.status)
+                .body(Map.of("message", ErrorCode.DB_CONSTRAINT_VIOLATION.message));
+    }
+
+    @ExceptionHandler(QueryTimeoutException.class)
+    public ResponseEntity<Map<String, String>> handleQueryTimeoutException(QueryTimeoutException e) {
+        log.warn("QueryTimeoutException: ", e);
+        return ResponseEntity
+                .status(ErrorCode.QUERY_TIMEOUT.status)
+                .body(Map.of("message", ErrorCode.QUERY_TIMEOUT.message));
     }
 }
