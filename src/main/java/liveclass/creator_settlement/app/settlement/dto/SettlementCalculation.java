@@ -7,7 +7,7 @@ public record SettlementCalculation(
         BigDecimal refundAmount,
         BigDecimal netAmount,
         BigDecimal commissionRate,
-        BigDecimal commissionAmount,
+        BigDecimal strippedCommissionAmount,
         BigDecimal expectedSettleAmount,
         long sellCount,
         long cancelCount

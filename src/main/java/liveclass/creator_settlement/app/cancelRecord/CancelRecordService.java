@@ -8,8 +8,8 @@ import liveclass.creator_settlement.domain.course.CourseRepository;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecord;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
 import liveclass.creator_settlement.domain.saleRecord.constant.SaleRecordStatus;
-import liveclass.creator_settlement.domain.settlement.SettlementRecord;
-import liveclass.creator_settlement.domain.settlement.SettlementRecordRepository;
+import liveclass.creator_settlement.domain.settlement.Settlement;
+import liveclass.creator_settlement.domain.settlement.SettlementRepository;
 import liveclass.creator_settlement.global.component.IdGenerator;
 import liveclass.creator_settlement.global.exception.BusinessException;
 import liveclass.creator_settlement.global.exception.ErrorCode;
@@ -28,7 +28,7 @@ public class CancelRecordService {
 
     private final CancelRecordRepository cancelRecordRepository;
     private final SaleRecordRepository saleRecordRepository;
-    private final SettlementRecordRepository settlementRecordRepository;
+    private final SettlementRepository settlementRepository;
     private final CourseRepository courseRepository;
     private final IdGenerator idGenerator;
 
@@ -58,10 +58,10 @@ public class CancelRecordService {
 
         try{
             if (YearMonth.now().isAfter(saledAt)) {
-            SettlementRecord smr = settlementRecordRepository.findByCreatorIdAndYearMonthWithPessimisticLock(creatorId, saledAt.toString())
-                    .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_RECORD_NOT_FOUND));
+            Settlement sm = settlementRepository.findByCreatorIdAndYearMonthWithPessimisticLock(creatorId, saledAt.toString())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND));
 
-            smr.refundAfterConfirm(req.refundAmount());
+            sm.refundAfterYearMonth(req.refundAmount());
             }
         } catch (BusinessException e){
             log.warn("WARN! SETTLEMENT_NOT_FOUND [과거 정산 조회 실패] - 관리자 확인 후 수동 생성/확정 필요: creatorId: {}, yearMonth: {}", creatorId, saledAt);

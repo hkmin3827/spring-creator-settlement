@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 
@@ -28,6 +29,30 @@ public class Settlement {
     @Column(name = "year_month", nullable = false, length = 7, updatable = false)
     public String yearMonth;
 
+    @Column(name = "total_amount", nullable = false, updatable = false, precision = 6)
+    public BigDecimal totalAmount = BigDecimal.ZERO;
+
+    @Column(name = "refund_amount", nullable = false, precision = 6)
+    public BigDecimal refundAmount = BigDecimal.ZERO;
+
+    @Column(name = "net_amount", nullable = false, precision = 6)
+    public BigDecimal netAmount = BigDecimal.ZERO;
+
+    @Column(name = "commission_rate", nullable = false, updatable = false, precision = 5, scale = 4)
+    public BigDecimal commissionRate;
+
+    @Column(name = "commission_amount", nullable = false, precision = 10, scale = 4)
+    public BigDecimal commissionAmount = BigDecimal.ZERO;
+
+    @Column(name = "settle_amount", nullable = false, precision = 10, scale = 4)
+    public BigDecimal settleAmount = BigDecimal.ZERO;
+
+    @Column(name = "sell_count", nullable = false, updatable = false)
+    public long sellCount = 0L;
+
+    @Column(name = "cancel_count", nullable = false)
+    public long cancelCount = 0L;
+
     @CreationTimestamp
     @Column(updatable = false)
     public LocalDateTime createdAt;
@@ -41,14 +66,27 @@ public class Settlement {
     @Version
     public Long version;
 
-    public static Settlement create(String id, String creatorId, String yearMonth) {
-        Settlement s = new Settlement();
-        s.status = SettlementStatus.PENDING;
-        s.id = id;
-        s.creatorId = creatorId;
-        s.yearMonth = yearMonth;
+    public static Settlement create(
+            String id, String creatorId, String yearMonth,
+            BigDecimal totalAmount, BigDecimal refundAmount, BigDecimal netAmount,
+            BigDecimal commissionRate, BigDecimal commissionAmount, BigDecimal settleAmount,
+            long sellCount, long cancelCount
+    ) {
+        Settlement sm = new Settlement();
+        sm.id = id;
+        sm.creatorId = creatorId;
+        sm.yearMonth = yearMonth;
+        sm.totalAmount = totalAmount;
+        sm.refundAmount = refundAmount;
+        sm.netAmount = netAmount;
+        sm.commissionRate = commissionRate;
+        sm.commissionAmount = commissionAmount;
+        sm.settleAmount = settleAmount;
+        sm.sellCount = sellCount;
+        sm.cancelCount = cancelCount;
+        sm.status = SettlementStatus.PENDING;
 
-        return s;
+        return sm;
     }
 
     public void confirm() {
@@ -59,5 +97,19 @@ public class Settlement {
     public void markAsPaid() {
         this.status = SettlementStatus.PAID;
         this.paidAt = LocalDateTime.now();
+    }
+
+
+    public void refundAfterYearMonth(BigDecimal refundAmount) {
+        BigDecimal changedRefundAmount, changedNetAmount, changedCommissionAmount, changedSettleAmount;
+        changedRefundAmount = this.refundAmount.add(refundAmount);
+        changedNetAmount = this.netAmount.subtract(refundAmount);
+        changedCommissionAmount = changedNetAmount.multiply(commissionRate);
+        changedSettleAmount = changedNetAmount.subtract(changedCommissionAmount);
+
+        this.refundAmount = changedRefundAmount;
+        this.netAmount = changedNetAmount;
+        this.commissionAmount = changedCommissionAmount;
+        this.settleAmount = changedSettleAmount;
     }
 }
