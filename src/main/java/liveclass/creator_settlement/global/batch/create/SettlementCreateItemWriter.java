@@ -1,4 +1,4 @@
-package liveclass.creator_settlement.global.batch;
+package liveclass.creator_settlement.global.batch.create;
 
 import liveclass.creator_settlement.app.settlement.SettlementService;
 import liveclass.creator_settlement.app.settlement.dto.SettlementBatchItem;
@@ -13,16 +13,15 @@ import org.springframework.stereotype.Component;
 @Component
 @StepScope
 @RequiredArgsConstructor
-public class SettlementItemWriter implements ItemWriter<SettlementBatchItem> {
+public class SettlementCreateItemWriter implements ItemWriter<SettlementBatchItem> {
 
     private final SettlementService settlementService;
 
     @Override
     public void write(Chunk<? extends SettlementBatchItem> chunk) {
         for (SettlementBatchItem item : chunk) {
-            String settlementId = settlementService.createPending(item.creatorId(), item.yearMonth());
-            settlementService.confirmPending(settlementId);
-            log.info("정산 확정 완료 - creatorId: {}, yearMonth: {}", item.creatorId(), item.yearMonth());
+            settlementService.createPending(item.creatorId(), item.yearMonth());
+            log.info("정산 생성 완료 - creatorId: {}, yearMonth: {}", item.creatorId(), item.yearMonth());
         }
     }
 }

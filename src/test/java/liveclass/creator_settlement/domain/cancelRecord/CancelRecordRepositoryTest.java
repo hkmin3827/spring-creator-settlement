@@ -35,7 +35,7 @@ class CancelRecordRepositoryTest {
 
     @Test
     void findByCreatorIdAndCancelledAtBetween_범위_내_취소내역_반환() {
-        em.persist(CancelRecord.of("cancel-1", "sale-1", new BigDecimal("100000"), null));
+        em.persist(CancelRecord.of("cancel-1", "sale-1", LocalDateTime.parse("2025-03-15T14:30:00"), new BigDecimal("100000"), null));
         em.flush();
 
         List<CancelRecord> result = cancelRecordRepository.findByCreatorIdAndCancelledAtBetween(
@@ -53,8 +53,8 @@ class CancelRecordRepositoryTest {
         em.persist(Creator.of("creator-2", "김철수"));
         em.persist(Course.of("course-2", "creator-2", "Python 강의", new BigDecimal("50000")));
         em.persist(SaleRecord.of("sale-2", "course-2", "student-2", new BigDecimal("50000"), null));
-        em.persist(CancelRecord.of("cancel-1", "sale-1", new BigDecimal("100000"), null));
-        em.persist(CancelRecord.of("cancel-2", "sale-2", new BigDecimal("50000"), null));
+        em.persist(CancelRecord.of("cancel-1", "sale-1", LocalDateTime.parse("2025-03-15T14:30:00"), new BigDecimal("100000"), null));
+        em.persist(CancelRecord.of("cancel-2", "sale-2", LocalDateTime.parse("2025-03-15T14:30:00"), new BigDecimal("50000"), null));
         em.flush();
 
         List<CancelRecord> result = cancelRecordRepository.findByCreatorIdAndCancelledAtBetween(
@@ -69,7 +69,7 @@ class CancelRecordRepositoryTest {
 
     @Test
     void findByCreatorIdAndCancelledAtBetween_범위_외_데이터_제외() {
-        em.persist(CancelRecord.of("cancel-1", "sale-1", new BigDecimal("100000"), null));
+        em.persist(CancelRecord.of("cancel-1", "sale-1", LocalDateTime.parse("2025-03-15T14:30:00"), new BigDecimal("100000"), null));
         em.flush();
 
         List<CancelRecord> result = cancelRecordRepository.findByCreatorIdAndCancelledAtBetween(
@@ -86,8 +86,8 @@ class CancelRecordRepositoryTest {
         em.persist(Creator.of("creator-2", "김철수"));
         em.persist(Course.of("course-2", "creator-2", "Python 강의", new BigDecimal("50000")));
         em.persist(SaleRecord.of("sale-2", "course-2", "student-2", new BigDecimal("50000"), null));
-        em.persist(CancelRecord.of("cancel-1", "sale-1", new BigDecimal("100000"), null));
-        em.persist(CancelRecord.of("cancel-2", "sale-2", new BigDecimal("50000"), null));
+        em.persist(CancelRecord.of("cancel-1", "sale-1", LocalDateTime.parse("2025-03-15T14:30:00"),new BigDecimal("100000"), null));
+        em.persist(CancelRecord.of("cancel-2", "sale-2", LocalDateTime.parse("2025-03-15T14:30:00"),new BigDecimal("50000"), null));
         em.flush();
 
         List<CreatorAggregationDto> result = cancelRecordRepository.aggregateCancelsByCreatorInRange(
@@ -107,7 +107,7 @@ class CancelRecordRepositoryTest {
 
     @Test
     void aggregateCancelsByCreatorInRange_범위_외_데이터_제외() {
-        em.persist(CancelRecord.of("cancel-1", "sale-1", new BigDecimal("100000"), null));
+        em.persist(CancelRecord.of("cancel-1", "sale-1", LocalDateTime.parse("2025-03-15T14:30:00"), new BigDecimal("100000"), null));
         em.flush();
 
         List<CreatorAggregationDto> result = cancelRecordRepository.aggregateCancelsByCreatorInRange(

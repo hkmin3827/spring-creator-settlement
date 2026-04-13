@@ -8,9 +8,5 @@ import java.util.Optional;
 public interface SettlementRepository extends JpaRepository<Settlement, String> {
     Optional<Settlement> findByCreatorIdAndYearMonth(String creatorId, String yearMonth);
 
-    boolean existsByCreatorIdAndYearMonthAndStatusIn(
-            String creatorId, String yearMonth, java.util.List<SettlementStatus> statuses
-    );
-
     boolean existsByCreatorIdAndYearMonth(String creatorId, String yearMonth);
 }

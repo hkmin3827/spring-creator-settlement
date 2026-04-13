@@ -17,12 +17,13 @@ import java.time.YearMonth;
 public class MonthlySettlementScheduler {
 
     private final JobOperator jobOperator;
-    private final Job monthlySettlementJob;
+    private final Job settlementCreateJob;
+    private final Job monthlySettlementConfirmJob;
 
     @Scheduled(cron = "0 5 0 1 * *", zone = "Asia/Seoul")
-    public void runMonthlySettlement() {
+    public void runSettlementCreate() {
         YearMonth previousMonth = YearMonth.now().minusMonths(1);
-        log.info("월별 정산 배치 시작 - 대상 월: {}", previousMonth);
+        log.info("월별 정산 생성 배치 시작 - 대상 월: {}", previousMonth);
 
         JobParameters params = new JobParametersBuilder()
                 .addString("yearMonth", previousMonth.toString())
@@ -30,10 +31,28 @@ public class MonthlySettlementScheduler {
                 .toJobParameters();
 
         try {
-            jobOperator.start(monthlySettlementJob, params);
-            log.info("월별 정산 배치 완료 - 대상 월: {}", previousMonth);
+            jobOperator.start(settlementCreateJob, params);
+            log.info("월별 정산 생성 배치 완료 - 대상 월: {}", previousMonth);
         } catch (Exception e) {
-            log.error("월별 정산 배치 실패 - 대상 월: {}", previousMonth, e);
+            log.error("월별 정산 생성 배치 실패 - 대상 월: {}", previousMonth, e);
+        }
+    }
+
+    @Scheduled(cron = "0 5 0 15 * *", zone = "Asia/Seoul")
+    public void runSettlementConfirm() {
+        YearMonth previousMonth = YearMonth.now().minusMonths(1);
+        log.info("월별 정산 확정 배치 시작 - 대상 월: {}", previousMonth);
+
+        JobParameters params = new JobParametersBuilder()
+                .addString("yearMonth", previousMonth.toString())
+                .addLong("timestamp", System.currentTimeMillis())
+                .toJobParameters();
+
+        try {
+            jobOperator.start(monthlySettlementConfirmJob, params);
+            log.info("월별 정산 확정 배치 완료 - 대상 월: {}", previousMonth);
+        } catch (Exception e) {
+            log.error("월별 정산 확정 배치 실패 - 대상 월: {}", previousMonth, e);
         }
     }
 }

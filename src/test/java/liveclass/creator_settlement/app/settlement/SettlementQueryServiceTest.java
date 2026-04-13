@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
@@ -104,7 +105,7 @@ class SettlementQueryServiceTest {
     void getMonthlySettlement_DB에_없으면_PENDING으로_계산하여_반환() {
         SaleRecord sale1 = SaleRecord.of("sale-1", "course-1", "student-1", new BigDecimal("200000"), null);
         SaleRecord sale2 = SaleRecord.of("sale-2", "course-1", "student-2", new BigDecimal("100000"), null);
-        CancelRecord cancel = CancelRecord.of("cancel-1", "sale-1", new BigDecimal("50000"), null);
+        CancelRecord cancel = CancelRecord.of("cancel-1", "sale-1", LocalDateTime.parse("2025-03-15T14:30:00"), new BigDecimal("50000"), null);
 
         given(creatorQueryService.getCreatorName("creator-1")).willReturn("홍길동");
         given(settlementRepository.findByCreatorIdAndYearMonth("creator-1", "2025-03"))

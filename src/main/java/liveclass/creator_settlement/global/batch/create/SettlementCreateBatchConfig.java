@@ -1,4 +1,4 @@
-package liveclass.creator_settlement.global.batch;
+package liveclass.creator_settlement.global.batch.create;
 
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.OptimisticLockException;
@@ -17,7 +17,6 @@ import org.springframework.batch.infrastructure.item.database.builder.JpaPagingI
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataAccessResourceFailureException;
-import org.springframework.dao.DeadlockLoserDataAccessException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -25,25 +24,25 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @Configuration
 @EnableScheduling
 @RequiredArgsConstructor
-public class MonthlySettlementBatchConfig {
+public class SettlementCreateBatchConfig {
 
     private final JobRepository jobRepository;
     private final EntityManagerFactory entityManagerFactory;
 
     @Bean
-    public Job monthlySettlementJob(Step monthlySettlementStep) {
-        return new JobBuilder("monthlySettlementJob", jobRepository)
-                .start(monthlySettlementStep)
+    public Job settlementCreateJob(Step settlementCreateStep) {
+        return new JobBuilder("settlementCreateJob", jobRepository)
+                .start(settlementCreateStep)
                 .build();
     }
 
     @Bean
-    public Step monthlySettlementStep(
+    public Step settlementCreateStep(
             JpaPagingItemReader<Creator> creatorItemReader,
-            SettlementItemProcessor processor,
-            SettlementItemWriter writer,
-            SettlementSkipListener skipListener) {
-        return new StepBuilder("monthlySettlementStep", jobRepository)
+            SettlementCreateItemProcessor processor,
+            SettlementCreateItemWriter writer,
+            SettlementCreateSkipListener skipListener) {
+        return new StepBuilder("settlementCreateStep", jobRepository)
                 .<Creator, SettlementBatchItem>chunk(50)
                 .reader(creatorItemReader)
                 .processor(processor)

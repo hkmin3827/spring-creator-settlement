@@ -75,4 +75,19 @@ public class SettlementRecord {
         record.cancelCount = cancelCount;
         return record;
     }
+
+    public void refundAfterConfirm(BigDecimal refundAmount) {
+        this.cancelCount += 1;
+
+        BigDecimal changedRefundAmount, changedNetAmount, changedCommissionAmount, changedSettleAmount;
+        changedRefundAmount = this.refundAmount.add(refundAmount);
+        changedNetAmount = this.netAmount.subtract(refundAmount);
+        changedCommissionAmount = changedNetAmount.multiply(commissionRate);
+        changedSettleAmount = changedNetAmount.subtract(changedCommissionAmount);
+
+        this.refundAmount = changedRefundAmount;
+        this.netAmount = changedNetAmount;
+        this.commissionAmount = changedCommissionAmount;
+        this.settleAmount = changedSettleAmount;
+    }
 }

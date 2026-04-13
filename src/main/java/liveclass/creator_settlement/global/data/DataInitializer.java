@@ -78,6 +78,7 @@ public class DataInitializer implements ApplicationRunner {
                 cancelRecordRepository.save(CancelRecord.of(
                     id,
                     saleRecordId,
+                    LocalDateTime.parse(node.get("paidAt").asString()),
                     BigDecimal.valueOf(node.get("refundAmount").asLong()),
                     LocalDateTime.parse(node.get("cancelledAt").asString())
                 ));
