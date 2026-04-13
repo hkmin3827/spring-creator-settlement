@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface CreatorRepository extends JpaRepository<Creator, String> {
-    @Query("SELECT new liveclass.creator_settlement.app.dto.CreatorNameDto(c.id, c.name) FROM Creator c")
+    @Query("""
+    SELECT new liveclass.creator_settlement.app.creator.dto.CreatorNameDto(c.id, c.name) FROM Creator c
+    """)
     List<CreatorNameDto> findIdAndName();
 }

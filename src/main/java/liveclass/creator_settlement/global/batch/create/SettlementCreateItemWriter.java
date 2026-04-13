@@ -1,7 +1,7 @@
 package liveclass.creator_settlement.global.batch.create;
 
 import liveclass.creator_settlement.app.settlement.SettlementService;
-import liveclass.creator_settlement.app.settlement.dto.SettlementBatchItem;
+import liveclass.creator_settlement.global.batch.dto.SettlementBatchItem;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.configuration.annotation.StepScope;

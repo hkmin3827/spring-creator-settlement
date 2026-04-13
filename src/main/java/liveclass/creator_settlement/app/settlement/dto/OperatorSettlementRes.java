@@ -17,12 +17,12 @@ public record OperatorSettlementRes(
     public record CreatorSettlementEntry(
         String creatorId,
         String creatorName,
-        BigDecimal expectedSettleAmount
+        BigDecimal settleAmount
     ) {
         public static CreatorSettlementEntry of(
-                String creatorId, String creatorName, Money expectedSettleAmount) {
+                String creatorId, String creatorName, Money settleAmount) {
             return new CreatorSettlementEntry(
-                    creatorId, creatorName, expectedSettleAmount.amount()
+                    creatorId, creatorName, settleAmount.amount()
             );
         }
 

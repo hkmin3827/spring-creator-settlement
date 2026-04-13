@@ -44,12 +44,12 @@ public class OperatorSettlementQueryService {
 
         Map<String, BigDecimal> saleTotals = new HashMap<>();
         for (CreatorAggregationDto row : saleAggregates) {
-            saleTotals.put(row.creatorId(), row.totalAmount());
+            saleTotals.put(row.creatorId(), row.amount());
         }
 
         Map<String, BigDecimal> cancelTotals = new HashMap<>();
         for (CreatorAggregationDto row : cancelAggregates) {
-            cancelTotals.put(row.creatorId(), row.totalAmount());
+            cancelTotals.put(row.creatorId(), row.amount());
         }
 
         Map<String, String> creatorNames = creatorQueryService.getAllCreatorNames();
@@ -64,11 +64,11 @@ public class OperatorSettlementQueryService {
             Money netAmount = totalAmount.subtract(refundAmount);
 
             Money finalCommissionAmount = Money.of(netAmount.amount().multiply(commissionRate).setScale(0, RoundingMode.DOWN));
-            Money expectedSettleAmount = netAmount.subtract(finalCommissionAmount);
+            Money settleAmount = netAmount.subtract(finalCommissionAmount);
 
-            totalSettlement = totalSettlement.add(expectedSettleAmount);
+            totalSettlement = totalSettlement.add(settleAmount);
 
-            entries.add(OperatorSettlementRes.CreatorSettlementEntry.of(cId, creatorNames.get(cId), expectedSettleAmount));
+            entries.add(OperatorSettlementRes.CreatorSettlementEntry.of(cId, creatorNames.get(cId), settleAmount));
         }
 
         int startPage = (int) pageable.getOffset();

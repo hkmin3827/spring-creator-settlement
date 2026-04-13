@@ -1,6 +1,6 @@
 package liveclass.creator_settlement.global.batch.create;
 
-import liveclass.creator_settlement.app.settlement.dto.SettlementBatchItem;
+import liveclass.creator_settlement.global.batch.dto.SettlementBatchItem;
 import liveclass.creator_settlement.domain.creator.Creator;
 import liveclass.creator_settlement.domain.settlement.SettlementRepository;
 import lombok.extern.slf4j.Slf4j;

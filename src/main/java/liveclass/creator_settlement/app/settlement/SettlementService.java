@@ -79,7 +79,6 @@ public class SettlementService {
         settlement.confirm();
     }
 
-    // 정산금 지급 완료 후 호출 (상태변경) ( CONFIRM -> PAID  + paidAt 저장)
     public void markAsPaid(String settlementId) {
         Settlement settlement = settlementRepository.findById(settlementId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND));
@@ -101,13 +100,9 @@ public class SettlementService {
                 throw new BusinessException(ErrorCode.NO_CONFIRMED_SETTLEMENTS);
             }
             return updateCount;
-        } catch (BusinessException e) {
-            throw e;
         } catch (QueryTimeoutException e) {
             throw new BusinessException(ErrorCode.QUERY_TIMEOUT);
-        } catch (DataIntegrityViolationException e) {
-            throw new BusinessException(ErrorCode.DB_CONSTRAINT_VIOLATION);
-        } catch (JpaSystemException e) {
+        } catch (DataIntegrityViolationException | JpaSystemException e) {
             throw new BusinessException(ErrorCode.DB_CONSTRAINT_VIOLATION);
         }
     }

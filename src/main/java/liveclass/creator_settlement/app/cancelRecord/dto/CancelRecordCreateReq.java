@@ -10,6 +10,6 @@ import java.time.LocalDateTime;
 
 public record CancelRecordCreateReq(
     @NotBlank String saleRecordId,
-    @NotNull @Positive @Digits(integer = 6, fraction = 2) BigDecimal refundAmount,
+    @NotNull @Positive @Digits(integer = 6, fraction = 0) BigDecimal refundAmount,
     @NotNull LocalDateTime cancelledAt
 ) {}

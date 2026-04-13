@@ -2,7 +2,7 @@ package liveclass.creator_settlement.global.batch.create;
 
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.OptimisticLockException;
-import liveclass.creator_settlement.app.settlement.dto.SettlementBatchItem;
+import liveclass.creator_settlement.global.batch.dto.SettlementBatchItem;
 import liveclass.creator_settlement.domain.creator.Creator;
 import liveclass.creator_settlement.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
