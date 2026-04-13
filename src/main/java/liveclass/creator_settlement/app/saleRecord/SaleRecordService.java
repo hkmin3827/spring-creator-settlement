@@ -10,13 +10,14 @@ import liveclass.creator_settlement.global.component.IdGenerator;
 import liveclass.creator_settlement.global.exception.BusinessException;
 import liveclass.creator_settlement.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -47,25 +48,22 @@ public class SaleRecordService {
     }
 
     @Transactional(readOnly = true)
-    public List<SaleRecordRes> getSaleRecords(String creatorId, LocalDate startDate, LocalDate endDate) {
+    public Page<SaleRecordRes> getSaleRecords(String creatorId, LocalDate startDate, LocalDate endDate, Pageable pageable) {
         if (startDate != null && endDate != null) {
             return saleRecordRepository.findByCreatorIdAndPaidAtBetween(
                             creatorId,
                             startDate.atStartOfDay(),
-                            endDate.atTime(LocalTime.MAX)
-                    ).stream()
-                    .map(SaleRecordRes::from)
-                    .toList();
+                            endDate.atTime(LocalTime.MAX),
+                            pageable
+                    ).map(SaleRecordRes::from);
+        } else if (startDate == null && endDate != null) {
+            return saleRecordRepository.findByCreatorIdAndPaidAtEnd(creatorId, endDate.atTime(LocalTime.MAX), pageable)
+                    .map(SaleRecordRes::from);
+        } else if (startDate != null) {
+            return saleRecordRepository.findByCreatorIdAndPaidAtStart(creatorId, startDate.atStartOfDay(), pageable)
+                    .map(SaleRecordRes::from);
         }
-        else if (startDate == null && endDate != null) {
-            return saleRecordRepository.findByCreatorIdAndPaidAtEnd(creatorId, endDate.atTime(LocalTime.MAX))
-                    .stream().map(SaleRecordRes::from).toList();
-        } else if(startDate != null) {
-            return saleRecordRepository.findByCreatorIdAndPaidAtStart(creatorId, startDate.atStartOfDay())
-                    .stream().map(SaleRecordRes::from).toList();
-        }
-        return saleRecordRepository.findAllByCreatorId(creatorId).stream()
-                .map(SaleRecordRes::from)
-                .toList();
+        return saleRecordRepository.findAllByCreatorId(creatorId, pageable)
+                .map(SaleRecordRes::from);
     }
 }

@@ -12,6 +12,7 @@ import liveclass.creator_settlement.global.exception.BusinessException;
 import liveclass.creator_settlement.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,7 +97,7 @@ public class SettlementService {
         var start = yearMonth.atDay(1).atStartOfDay();
         var end = yearMonth.atEndOfMonth().atTime(LocalTime.MAX);
 
-        var sales = saleRecordRepository.findByCreatorIdAndPaidAtBetween(creatorId, start, end);
+        var sales = saleRecordRepository.findByCreatorIdAndPaidAtBetween(creatorId, start, end, Pageable.ofSize(0)).toList();
         var cancels = cancelRecordRepository.findByCreatorIdAndCancelledAtBetween(creatorId, start, end);
 
         Money totalAmount = sales.stream()

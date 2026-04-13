@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
@@ -40,8 +41,9 @@ class SaleRecordRepositoryTest {
         List<SaleRecord> result = saleRecordRepository.findByCreatorIdAndPaidAtBetween(
                 "creator-1",
                 LocalDateTime.now().minusMinutes(5),
-                LocalDateTime.now().plusMinutes(5)
-        );
+                LocalDateTime.now().plusMinutes(5),
+                Pageable.unpaged()
+        ).getContent();
 
         assertThat(result).hasSize(2);
         assertThat(result).extracting(s -> s.courseId).containsOnly("course-1");
@@ -58,8 +60,9 @@ class SaleRecordRepositoryTest {
         List<SaleRecord> result = saleRecordRepository.findByCreatorIdAndPaidAtBetween(
                 "creator-1",
                 LocalDateTime.now().minusMinutes(5),
-                LocalDateTime.now().plusMinutes(5)
-        );
+                LocalDateTime.now().plusMinutes(5),
+                Pageable.unpaged()
+        ).getContent();
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).id).isEqualTo("sale-1");
@@ -73,8 +76,9 @@ class SaleRecordRepositoryTest {
         List<SaleRecord> result = saleRecordRepository.findByCreatorIdAndPaidAtBetween(
                 "creator-1",
                 LocalDateTime.of(2020, 1, 1, 0, 0),
-                LocalDateTime.of(2020, 12, 31, 23, 59)
-        );
+                LocalDateTime.of(2020, 12, 31, 23, 59),
+                Pageable.unpaged()
+        ).getContent();
 
         assertThat(result).isEmpty();
     }

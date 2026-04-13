@@ -1,42 +1,28 @@
 package liveclass.creator_settlement.app.settlement.dto;
 
 import liveclass.creator_settlement.domain.vo.Money;
+import liveclass.creator_settlement.global.page.PageResponse;
+import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 public record OperatorSettlementRes(
-    List<CreatorSettlementEntry> entries,
+    PageResponse<CreatorSettlementEntry> entries,
     BigDecimal totalSettlementAmount
 ) {
-    public static OperatorSettlementRes from(List<CreatorSettlementEntry> entries, BigDecimal totalSettlementAmount) {
-        return new OperatorSettlementRes(entries, totalSettlementAmount);
+    public static OperatorSettlementRes from(Page<CreatorSettlementEntry> entries, BigDecimal totalSettlementAmount) {
+        return new OperatorSettlementRes(PageResponse.from(entries), totalSettlementAmount);
     }
 
     public record CreatorSettlementEntry(
         String creatorId,
         String creatorName,
-        BigDecimal totalAmount,
-        BigDecimal refundAmount,
-        BigDecimal netAmount,
-        BigDecimal commissionAmount,
-        BigDecimal expectedSettleAmount,
-        long sellCount,
-        long cancelCount
+        BigDecimal expectedSettleAmount
     ) {
         public static CreatorSettlementEntry of(
-                String creatorId, String creatorName,
-                Money totalAmount, Money refundAmount, Money netAmount,
-                Money finalCommissionAmount, Money expectedSettleAmount,
-                long sellCount, long cancelCount) {
+                String creatorId, String creatorName, Money expectedSettleAmount) {
             return new CreatorSettlementEntry(
-                    creatorId, creatorName,
-                    totalAmount.amount(),
-                    refundAmount.amount(),
-                    netAmount.amount(),
-                    finalCommissionAmount.amount(),
-                    expectedSettleAmount.amount(),
-                    sellCount, cancelCount
+                    creatorId, creatorName, expectedSettleAmount.amount()
             );
         }
 

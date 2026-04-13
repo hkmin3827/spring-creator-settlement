@@ -20,5 +20,4 @@ public interface SettlementRepository extends JpaRepository<Settlement, String> 
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000"))
     @Query("SELECT sm FROM Settlement sm WHERE sm.creatorId = :creatorId AND sm.yearMonth = :yearMonth")
     Optional<Settlement> findByCreatorIdAndYearMonthWithPessimisticLock(@Param("creatorId") String creatorId, @Param("yearMonth") String yearMonth);
-
 }

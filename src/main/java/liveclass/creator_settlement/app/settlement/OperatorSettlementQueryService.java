@@ -8,6 +8,9 @@ import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
 import liveclass.creator_settlement.domain.vo.Money;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +35,7 @@ public class OperatorSettlementQueryService {
     @Value("${app.commission-rate}")
     private BigDecimal commissionRate;
 
-    public OperatorSettlementRes getOperatorAggregate(LocalDate startDate, LocalDate endDate) {
+    public OperatorSettlementRes getOperatorAggregate(LocalDate startDate, LocalDate endDate, Pageable pageable) {
         var start = startDate.atStartOfDay();
         var end = endDate.atTime(LocalTime.MAX);
 
@@ -40,21 +43,17 @@ public class OperatorSettlementQueryService {
         List<CreatorAggregationDto> cancelAggregates = cancelRecordRepository.aggregateCancelsByCreatorInRange(start, end);
 
         Map<String, BigDecimal> saleTotals = new HashMap<>();
-        Map<String, Long> saleCounts = new HashMap<>();
         for (CreatorAggregationDto row : saleAggregates) {
             saleTotals.put(row.creatorId(), row.totalAmount());
-            saleCounts.put(row.creatorId(), row.count());
         }
 
         Map<String, BigDecimal> cancelTotals = new HashMap<>();
-        Map<String, Long> cancelCounts = new HashMap<>();
         for (CreatorAggregationDto row : cancelAggregates) {
             cancelTotals.put(row.creatorId(), row.totalAmount());
-            cancelCounts.put(row.creatorId(), row.count());
         }
 
         Map<String, String> creatorNames = creatorQueryService.getAllCreatorNames();
-        var allCreatorIds = creatorNames.keySet();
+        var allCreatorIds = new ArrayList<>(creatorNames.keySet());
 
         List<OperatorSettlementRes.CreatorSettlementEntry> entries = new ArrayList<>();
         Money totalSettlement = Money.ZERO;
@@ -69,16 +68,15 @@ public class OperatorSettlementQueryService {
 
             totalSettlement = totalSettlement.add(expectedSettleAmount);
 
-            entries.add(OperatorSettlementRes.CreatorSettlementEntry.of(
-                    cId,
-                    creatorNames.get(cId),
-                    totalAmount, refundAmount, netAmount,
-                    finalCommissionAmount, expectedSettleAmount,
-                    saleCounts.getOrDefault(cId, 0L),
-                    cancelCounts.getOrDefault(cId, 0L)
-            ));
+            entries.add(OperatorSettlementRes.CreatorSettlementEntry.of(cId, creatorNames.get(cId), expectedSettleAmount));
         }
 
-        return OperatorSettlementRes.from(entries, totalSettlement.amount());
+        int startPage = (int) pageable.getOffset();
+        int endPage = Math.min(startPage + pageable.getPageSize(), entries.size());
+        List<OperatorSettlementRes.CreatorSettlementEntry> pageContent =
+                startPage >= entries.size() ? List.of() : entries.subList(startPage, endPage);
+        Page<OperatorSettlementRes.CreatorSettlementEntry> page = new PageImpl<>(pageContent, pageable, entries.size());
+
+        return OperatorSettlementRes.from(page, totalSettlement.amount());
     }
 }

@@ -10,6 +10,7 @@ import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
 import liveclass.creator_settlement.domain.saleRecord.constant.SaleRecordStatus;
 import liveclass.creator_settlement.domain.settlement.Settlement;
 import liveclass.creator_settlement.domain.settlement.SettlementRepository;
+import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
 import liveclass.creator_settlement.global.component.IdGenerator;
 import liveclass.creator_settlement.global.exception.BusinessException;
 import liveclass.creator_settlement.global.exception.ErrorCode;
@@ -61,10 +62,18 @@ public class CancelRecordService {
             Settlement sm = settlementRepository.findByCreatorIdAndYearMonthWithPessimisticLock(creatorId, saledAt.toString())
                     .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND));
 
+            if (sm.status == SettlementStatus.PAID) {
+                throw new BusinessException(ErrorCode.ALREADY_PAID_SETTLEMENT);
+            }
+
             sm.refundAfterYearMonth(req.refundAmount());
             }
         } catch (BusinessException e){
-            log.warn("WARN! SETTLEMENT_NOT_FOUND [과거 정산 조회 실패] - 관리자 확인 후 수동 생성/확정 필요: creatorId: {}, yearMonth: {}", creatorId, saledAt);
+            if (e.getErrorCode() == ErrorCode.SETTLEMENT_NOT_FOUND) {
+                log.warn("WARN! SETTLEMENT_NOT_FOUND [과거 정산 조회 실패] - 관리자 확인 후 수동 생성/확정 필요: creatorId: {}, yearMonth: {}", creatorId, saledAt);
+            } else if(e.getErrorCode() == ErrorCode.ALREADY_PAID_SETTLEMENT) {
+                log.info("지급이 완료된 정산의 강의 내역은 환불이 불가능합니다. saleRecordId: {}, paidAt: {}", saleRecord.id, saleRecord.paidAt);
+            }
             throw e;
         }
 

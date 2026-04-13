@@ -4,7 +4,10 @@ import jakarta.validation.Valid;
 import liveclass.creator_settlement.app.saleRecord.SaleRecordService;
 import liveclass.creator_settlement.app.saleRecord.dto.SaleRecordCreateReq;
 import liveclass.creator_settlement.app.saleRecord.dto.SaleRecordRes;
+import liveclass.creator_settlement.global.page.PageResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,11 +29,12 @@ public class SaleRecordController {
     }
 
     @GetMapping(version = "v1")
-    public List<SaleRecordRes> getSaleRecords(
+    public PageResponse<SaleRecordRes> getSaleRecords(
             @RequestParam String creatorId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @PageableDefault(size = 20, sort = "id") Pageable pageable
     ) {
-        return saleRecordService.getSaleRecords(creatorId, startDate, endDate);
+        return PageResponse.from(saleRecordService.getSaleRecords(creatorId, startDate, endDate, pageable));
     }
 }

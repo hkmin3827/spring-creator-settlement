@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -51,12 +52,12 @@ class OperatorSettlementQueryServiceTest {
                 .willReturn(Map.of("creator-1", "홍길동", "creator-2", "김철수"));
 
         OperatorSettlementRes result = operatorSettlementQueryService.getOperatorAggregate(
-                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31)
+                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31), PageRequest.of(0, Integer.MAX_VALUE)
         );
 
-        assertThat(result.entries()).hasSize(2);
+        assertThat(result.entries().content()).hasSize(2);
 
-        OperatorSettlementRes.CreatorSettlementEntry creator1 = result.entries().stream()
+        OperatorSettlementRes.CreatorSettlementEntry creator1 = result.entries().content().stream()
                 .filter(e -> "creator-1".equals(e.creatorId()))
                 .findFirst().orElseThrow();
 
@@ -69,7 +70,7 @@ class OperatorSettlementQueryServiceTest {
         assertThat(creator1.sellCount()).isEqualTo(5L);
         assertThat(creator1.cancelCount()).isEqualTo(1L);
 
-        OperatorSettlementRes.CreatorSettlementEntry creator2 = result.entries().stream()
+        OperatorSettlementRes.CreatorSettlementEntry creator2 = result.entries().content().stream()
                 .filter(e -> "creator-2".equals(e.creatorId()))
                 .findFirst().orElseThrow();
 
@@ -90,12 +91,12 @@ class OperatorSettlementQueryServiceTest {
                 .willReturn(Map.of("creator-1", "홍길동", "creator-2", "김철수"));
 
         OperatorSettlementRes result = operatorSettlementQueryService.getOperatorAggregate(
-                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31)
+                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31), PageRequest.of(0, Integer.MAX_VALUE)
         );
 
-        assertThat(result.entries()).hasSize(2);
+        assertThat(result.entries().content()).hasSize(2);
 
-        OperatorSettlementRes.CreatorSettlementEntry creator2 = result.entries().stream()
+        OperatorSettlementRes.CreatorSettlementEntry creator2 = result.entries().content().stream()
                 .filter(e -> "creator-2".equals(e.creatorId()))
                 .findFirst().orElseThrow();
 
@@ -116,10 +117,10 @@ class OperatorSettlementQueryServiceTest {
         given(creatorQueryService.getAllCreatorNames()).willReturn(Map.of());
 
         OperatorSettlementRes result = operatorSettlementQueryService.getOperatorAggregate(
-                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31)
+                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31), PageRequest.of(0, Integer.MAX_VALUE)
         );
 
-        assertThat(result.entries()).isEmpty();
+        assertThat(result.entries().content()).isEmpty();
         assertThat(result.totalSettlementAmount()).isEqualByComparingTo(BigDecimal.ZERO);
     }
 }
