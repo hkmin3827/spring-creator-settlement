@@ -26,7 +26,7 @@ public interface CancelRecordRepository extends JpaRepository<CancelRecord, Stri
 
     @Query("""
         SELECT new liveclass.creator_settlement.app.settlement.dto.CreatorAggregationDto(
-            c.creatorId, SUM(cr.refundAmount), COUNT(cr.id)
+            c.creatorId, SUM(cr.refundAmount)
         )
         FROM CancelRecord cr
         JOIN SaleRecord sr ON sr.id = cr.saleRecordId

@@ -26,7 +26,8 @@ public enum ErrorCode {
     CONCURRENT_UPDATE_CONFLICT(HttpStatus.CONFLICT, "동시 요청으로 인해 처리에 실패했습니다. 다시 시도해 주세요."),
     NO_CONFIRMED_SETTLEMENTS(HttpStatus.NOT_FOUND, "해당 월에 지급 가능한 CONFIRMED 상태의 정산이 없습니다."),
     DB_CONSTRAINT_VIOLATION(HttpStatus.CONFLICT, "DB 제약 조건 위반으로 처리에 실패했습니다."),
-    QUERY_TIMEOUT(HttpStatus.SERVICE_UNAVAILABLE, "쿼리 처리 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.");
+    QUERY_TIMEOUT(HttpStatus.SERVICE_UNAVAILABLE, "쿼리 처리 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요."),
+    EXPIRED_CANCEL_PARIOD(HttpStatus.CONFLICT, "15일이 지난 판매 내역은 취소/환불 불가능합니다.");
 
     public final HttpStatus status;
     public final String message;

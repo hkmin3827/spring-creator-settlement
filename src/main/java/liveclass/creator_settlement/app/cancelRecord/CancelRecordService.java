@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 
 @Service
@@ -36,6 +37,10 @@ public class CancelRecordService {
     public CancelRecordRes register(CancelRecordCreateReq req) {
         SaleRecord saleRecord = saleRecordRepository.findByIdWithPessimisticLock(req.saleRecordId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.SALE_RECORD_NOT_FOUND));
+
+        if (saleRecord.paidAt.isBefore(LocalDateTime.now().minusDays(15))) {
+            throw new BusinessException(ErrorCode.EXPIRED_CANCEL_PARIOD);
+        }
 
         if (saleRecord.status == SaleRecordStatus.CANCELLED) {
             throw new BusinessException(ErrorCode.ALREADY_CANCELLED);

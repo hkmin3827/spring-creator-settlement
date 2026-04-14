@@ -23,11 +23,12 @@ public interface SaleRecordRepository extends JpaRepository<SaleRecord, String> 
     Optional<SaleRecord> findByIdWithPessimisticLock(@Param("id") String id);
 
     @Query("""
-        SELECT sr FROM SaleRecord sr
-        WHERE sr.courseId IN (SELECT c.id FROM Course c WHERE c.creatorId = :creatorId)
+        SELECT sr FROM SaleRecord sr 
+        JOIN Course c ON sr.courseId = c.id 
+        WHERE c.creatorId = :creatorId 
         AND sr.paidAt >= :start AND sr.paidAt <= :end
         ORDER BY sr.paidAt DESC
-        """)
+    """)
     Page<SaleRecord> findByCreatorIdAndPaidAtBetween(
             @Param("creatorId") String creatorId,
             @Param("start") LocalDateTime start,
@@ -68,7 +69,7 @@ public interface SaleRecordRepository extends JpaRepository<SaleRecord, String> 
 
     @Query("""
         SELECT new liveclass.creator_settlement.app.settlement.dto.CreatorAggregationDto(
-            c.creatorId, SUM(sr.amount), COUNT(sr.id)
+            c.creatorId, SUM(sr.amount)
         )
         FROM SaleRecord sr JOIN Course c ON c.id = sr.courseId
         WHERE sr.paidAt >= :start AND sr.paidAt <= :end

@@ -54,7 +54,7 @@ public class Settlement {
     public long cancelCount = 0L;
 
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(updatable = false, nullable = false)
     public LocalDateTime createdAt;
 
     @Column(name = "confirmed_at")

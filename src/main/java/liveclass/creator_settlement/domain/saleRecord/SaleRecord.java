@@ -36,7 +36,8 @@ public class SaleRecord {
     @Column(nullable = false, updatable = false, precision = 6)
     public BigDecimal amount;
 
-    @CreationTimestamp
+//    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
     public LocalDateTime paidAt;
 
 
@@ -47,6 +48,7 @@ public class SaleRecord {
         record.studentId = studentId;
         record.amount = amount;
         record.status = SaleRecordStatus.PAID;
+        record.paidAt = paidAt;
         return record;
     }
 

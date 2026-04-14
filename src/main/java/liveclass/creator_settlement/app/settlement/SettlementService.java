@@ -113,7 +113,7 @@ public class SettlementService {
         var start = yearMonth.atDay(1).atStartOfDay();
         var end = yearMonth.atEndOfMonth().atTime(LocalTime.MAX);
 
-        var sales = saleRecordRepository.findByCreatorIdAndPaidAtBetween(creatorId, start, end, Pageable.ofSize(0)).toList();
+        var sales = saleRecordRepository.findByCreatorIdAndPaidAtBetween(creatorId, start, end, Pageable.unpaged()).toList();
         var cancels = cancelRecordRepository.findByCreatorIdAndCancelledAtBetween(creatorId, start, end);
 
         Money totalAmount = sales.stream()
