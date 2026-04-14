@@ -1,5 +1,7 @@
 package liveclass.creator_settlement.global.handler;
 
+import jakarta.persistence.OptimisticLockException;
+import jakarta.persistence.PessimisticLockException;
 import liveclass.creator_settlement.global.exception.BusinessException;
 import liveclass.creator_settlement.global.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 import java.util.Map;
 
 @Slf4j
@@ -45,14 +48,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("message", message));
     }
 
-    @ExceptionHandler(jakarta.persistence.OptimisticLockException.class)
+    @ExceptionHandler(DateTimeParseException.class)
+    public ResponseEntity<Map<String, String>> handleDateTimeParseException(DateTimeParseException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", ErrorCode.INVALID_DATE_TIME_FORM.message));
+    }
+
+    @ExceptionHandler(OptimisticLockException.class)
     public ResponseEntity<Map<String, String>> handleOptimisticLockException() {
         return ResponseEntity
             .status(ErrorCode.CONCURRENT_UPDATE_CONFLICT.status)
             .body(Map.of("message", ErrorCode.CONCURRENT_UPDATE_CONFLICT.message));
     }
 
-    @ExceptionHandler(jakarta.persistence.PessimisticLockException.class)
+    @ExceptionHandler(PessimisticLockException.class)
     public ResponseEntity<Map<String, String>> handlePessimisticLockException() {
         return ResponseEntity
             .status(ErrorCode.LOCK_ACQUISITION_FAILED.status)
@@ -62,16 +70,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, String>> handleHttpMessageNotReadableException() {
         return ResponseEntity
-                .status(ErrorCode.INVALID_YEAR_MONTH_INPUT_VALUE.status)
-                .body(Map.of("message", ErrorCode.INVALID_YEAR_MONTH_INPUT_VALUE.message));
+                .status(ErrorCode.INVALID_INPUT_FORM.status)
+                .body(Map.of("message", ErrorCode.INVALID_INPUT_FORM.message));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Map<String, String>> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
         if (YearMonth.class.equals(e.getRequiredType())) {
             return ResponseEntity
-                    .status(ErrorCode.INVALID_YEAR_MONTH_INPUT_VALUE.status)
-                    .body(Map.of("message", ErrorCode.INVALID_YEAR_MONTH_INPUT_VALUE.message));
+                    .status(ErrorCode.INVALID_INPUT_FORM.status)
+                    .body(Map.of("message", ErrorCode.INVALID_INPUT_FORM.message));
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", ErrorCode.INVALID_INPUT_TYPE.message));
     }

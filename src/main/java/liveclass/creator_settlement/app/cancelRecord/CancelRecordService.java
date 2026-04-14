@@ -77,7 +77,7 @@ public class CancelRecordService {
             if (e.getErrorCode() == ErrorCode.SETTLEMENT_NOT_FOUND) {
                 log.warn("WARN! SETTLEMENT_NOT_FOUND [과거 정산 조회 실패] - 관리자 확인 후 수동 생성/확정 필요: creatorId: {}, yearMonth: {}", creatorId, saledAt);
             } else if(e.getErrorCode() == ErrorCode.ALREADY_PAID_SETTLEMENT) {
-                log.info("지급이 완료된 정산의 강의 내역은 환불이 불가능합니다. saleRecordId: {}, paidAt: {}", saleRecord.id, saleRecord.paidAt);
+                log.warn("WARN! 지급완료된 정산의 판매 내역에 취소 요청이 발생하였습니다. 확인이 필요합니다. saleRecordId: {}, paidAt: {}", saleRecord.id, saleRecord.paidAt);
             }
             throw e;
         }

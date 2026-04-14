@@ -30,7 +30,7 @@ public class SettlementQueryService {
         if (YearMonth.now().isBefore(yearMonth)) {
             throw new BusinessException(ErrorCode.YEAR_MONTH_BAD_REQUEST);
         }
-        // 현재 월은 항상 실시간 계산 — 배치 대상이 아님
+        // 현재 월: 항상 실시간 계산 (정산 존재 X)
         if (YearMonth.now().equals(yearMonth)) {
             SettlementCalculation calc = settlementService.calculate(creatorId, yearMonth);
             return new MonthlySettlementRes(
