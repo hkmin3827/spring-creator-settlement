@@ -12,5 +12,5 @@ public record SaleRecordCreateReq(
     @NotBlank String courseId,
     @NotBlank String studentId,
     @NotNull @Positive @Digits(integer = 6, fraction = 0) BigDecimal amount,
-    @NotNull LocalDateTime paidAt
+    LocalDateTime paidAt
 ) {}

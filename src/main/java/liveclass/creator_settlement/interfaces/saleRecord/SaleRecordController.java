@@ -17,7 +17,7 @@ import java.time.LocalDate;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/sale-record")
+@RequestMapping("/api/{v}/sale-record")
 public class SaleRecordController {
 
     private final SaleRecordService saleRecordService;

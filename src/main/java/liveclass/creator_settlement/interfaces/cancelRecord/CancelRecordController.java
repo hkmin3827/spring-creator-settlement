@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/cancel-record")
+@RequestMapping("/api/{v}/cancel-record")
 public class CancelRecordController {
 
     private final CancelRecordService cancelRecordService;

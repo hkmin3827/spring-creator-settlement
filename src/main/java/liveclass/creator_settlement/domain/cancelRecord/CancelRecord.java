@@ -3,10 +3,10 @@ package liveclass.creator_settlement.domain.cancelRecord;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(
@@ -30,9 +30,13 @@ public class CancelRecord {
     @Column(nullable = false, updatable = false)
     public LocalDateTime paidAt;
 
-    @CreationTimestamp
     @Column(nullable = false, updatable = false)
     public LocalDateTime cancelledAt;
+
+    @PrePersist
+    public void prePersist() {
+        this.cancelledAt = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    }
 
     public static CancelRecord of(String id, String saleRecordId, LocalDateTime paidAt, BigDecimal refundAmount, LocalDateTime cancelledAt) {
         CancelRecord record = new CancelRecord();

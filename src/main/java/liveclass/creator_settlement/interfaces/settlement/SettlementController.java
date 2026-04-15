@@ -10,7 +10,7 @@ import java.time.YearMonth;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/settlement")
+@RequestMapping("/api/{v}/settlement")
 public class SettlementController {
 
     private final SettlementQueryService settlementQueryService;

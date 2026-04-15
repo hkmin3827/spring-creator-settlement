@@ -28,7 +28,7 @@ public class SettlementQueryService {
         String creatorName = creatorQueryService.getCreatorName(creatorId);
 
         if (YearMonth.now().isBefore(yearMonth)) {
-            throw new BusinessException(ErrorCode.YEAR_MONTH_BAD_REQUEST);
+            throw new BusinessException(ErrorCode.INVALID_SETTLEMENT_QUERY_YEAR_MONTH);
         }
         // 현재 월: 항상 실시간 계산 (정산 존재 X)
         if (YearMonth.now().equals(yearMonth)) {

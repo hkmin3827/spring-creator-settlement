@@ -7,8 +7,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.YearMonth;
+
 @RestController
-@RequestMapping("/api/admin/settlement")
+@RequestMapping("/api/{v}/admin/settlement")
 @RequiredArgsConstructor
 public class AdminSettlementControler {
 
@@ -16,14 +18,13 @@ public class AdminSettlementControler {
 
     @PostMapping(value = "/create", version = "v1")
     public ResponseEntity<Void> create(@RequestBody @Valid SettlementReq req) {
-        settlementService.createPending(req.creatorId(), req.yearMonth().toString());
+        settlementService.createPending(req.creatorId(), YearMonth.parse(req.yearMonth()));
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping(value = "/confirm", version = "v1")
     public ResponseEntity<Void> confirm(@RequestBody @Valid SettlementReq req) {
-        String settlementId = settlementService.createPending(req.creatorId(), req.yearMonth().toString());
-        settlementService.confirmPending(settlementId);
+        settlementService.confirmPending(req.creatorId(), YearMonth.parse(req.yearMonth()));
         return ResponseEntity.noContent().build();
     }
 }

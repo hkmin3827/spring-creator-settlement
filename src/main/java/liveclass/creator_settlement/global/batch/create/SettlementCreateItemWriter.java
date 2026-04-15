@@ -9,6 +9,8 @@ import org.springframework.batch.infrastructure.item.Chunk;
 import org.springframework.batch.infrastructure.item.ItemWriter;
 import org.springframework.stereotype.Component;
 
+import java.time.YearMonth;
+
 @Slf4j
 @Component
 @StepScope
@@ -20,7 +22,7 @@ public class SettlementCreateItemWriter implements ItemWriter<SettlementBatchIte
     @Override
     public void write(Chunk<? extends SettlementBatchItem> chunk) {
         for (SettlementBatchItem item : chunk) {
-            settlementService.createPending(item.creatorId(), item.yearMonth());
+            settlementService.createPending(item.creatorId(), YearMonth.parse(item.yearMonth()));
             log.info("정산 생성 완료 - creatorId: {}, yearMonth: {}", item.creatorId(), item.yearMonth());
         }
     }

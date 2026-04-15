@@ -14,7 +14,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 
 @RestController
-@RequestMapping("/api/operator/settlement")
+@RequestMapping("/api/{v}/operator/settlement")
 @RequiredArgsConstructor
 public class OperatorSettlementController {
     private final OperatorSettlementQueryService operatorSettlementQueryService;

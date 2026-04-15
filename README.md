@@ -76,10 +76,10 @@ PostgreSQL이 로컬에서 실행 중이어야 합니다 (기본 포트: 5432).
 
 ### 판매 내역 API
 
-| Method | Endpoint | 설명 |
-|--------|----------|------|
-| `POST` | `/api/v1/sale-record` | 판매 내역 등록 |
-| `GET` | `/api/v1/sale-record?creatorId=creator-3&startDate=2025-01-31&endDate=2025-03-31` | 크리에이터 기간별 판매 내역 조회 |
+| Method | Endpoint                                                                          | 설명                 |
+|--------|-----------------------------------------------------------------------------------|--------------------|
+| `POST` | `/api/v1/sale-record`                                                             | 판매 내역 등록           |
+| `GET`  | `/api/v1/sale-record?creatorId=creator-1&startDate=2026-01-31&endDate=2026-03-31` | 크리에이터 기간별 판매 내역 조회 |
 
 ### 취소 내역 API
 
@@ -120,7 +120,7 @@ PostgreSQL이 로컬에서 실행 중이어야 합니다 (기본 포트: 5432).
 
 ---
 
-## API 상세 설명
+## API 상세 설명 (예시)
 
 ### 판매 등록
 
@@ -129,12 +129,13 @@ POST /api/v1/sale-record
 Content-Type: application/json
 
 {
-  "courseId": "course-10",
-  "studentId": "student-1",
-  "amount": 99000,
-  "paidAt": "2025-03-15T14:00:00"
+    "courseId": "course-10",
+    "studentId": "studentId-52",
+    "amount": 98000,
+    "paidAt": "2026-04-10T10:00:00Z"
 }
 ```
+🔹paidAt 미입력 시 **현재 시각이 입력**됩니다.
 
 응답 — 201 Created:
 
@@ -153,7 +154,7 @@ Content-Type: application/json
 ### 판매 내역 조회
 
 ```
-GET /api/v1/sale-record?creatorId=creator-10&startDate=2025-03-01&endDate=2025-03-31
+GET /api/v1/sale-record?creatorId=creator-1&startDate=2026-03-01&endDate=2026-06-01
 ```
 
 응답:
@@ -162,19 +163,22 @@ GET /api/v1/sale-record?creatorId=creator-10&startDate=2025-03-01&endDate=2025-0
 {
   "content": [
     {
-      "id": "sale-1",
-      "courseId": "course-1",
+      "id": "sale-5",
+      "courseId": "course-2",
+      "studentId": "student-4",
+      "amount": 50000,
+      "paidAt": "2026-04-02T11:00:00",
+      "status": "CANCELLED"
+    },
+    {
+      "id": "sale-4",
+      "courseId": "course-2",
       "studentId": "student-3",
-      "amount": 30000,
-      "paidAt": "2026-03-10T10:00:00",
-      "status": "PAID"
-    }
-  ],
-  "page": 0,
-  "size": 10,
-  "totalElements": 1,
-  "totalPages": 1
-}
+      "amount": 50000,
+      "paidAt": "2026-04-02T09:00:00",
+      "status": "CANCELLED"
+    },
+    ...
 ```
 
 - `startDate`, `endDate`는 선택값입니다. 둘 다 없으면 해당 크리에이터의 전체 내역을 반환합니다.
@@ -191,7 +195,7 @@ Content-Type: application/json
 
 {
   "saleRecordId": "sale-10",
-  "refundAmount": 50000,
+  "refundAmount": 90000,
   "cancelledAt": "2025-03-20T10:00:00"
 }
 ```
@@ -200,10 +204,10 @@ Content-Type: application/json
 
 ```json
 {
-  "id": "cancel-5",
-  "saleRecordId": "sale-10",
-  "refundAmount": 50000,
-  "cancelledAt": "2025-03-20T10:00:00"
+  "id": "cancel-20",
+  "saleRecordId": "sale-20",
+  "refundAmount": 90000,
+  "cancelledAt": "2026-04-15T16:34:55"
 }
 ```
 
@@ -218,29 +222,29 @@ Content-Type: application/json
 ### 크리에이터 월별 정산 조회
 
 ```
-GET /api/v1/settlement/creator/{creatorId}?yearMonth=2025-03
+GET /api/v1/settlement/creator/creator-1?yearMonth=2026-03
 ```
 
 응답:
 
 ```json
 {
-  "creatorId": "creator-10",
-  "creatorName": "강강사",
-  "yearMonth": "2025-03",
-  "status": "CONFIRMED",
-  "totalAmount": 300000,
-  "refundAmount": 50000,
-  "netAmount": 250000,
+  "creatorId": "creator-1",
+  "creatorName": "김강사",
+  "yearMonth": "2026-03",
+  "status": "PENDING",
+  "totalAmount": 100000,
+  "refundAmount": 0,
+  "netAmount": 100000,
   "commissionRate": 0.20,
-  "commissionAmount": 50000,
-  "expectedSettleAmount": 200000,
-  "sellCount": 5,
-  "cancelCount": 1
+  "commissionAmount": 20000,
+  "expectedSettleAmount": 80000,
+  "sellCount": 2,
+  "cancelCount": 0
 }
 ```
 
-- `yearMonth` 형식: `yyyy-MM` (예: `2025-03`)
+- `yearMonth` 형식: `yyyy-MM` (예: `2026-03`)
 - 현재 월 조회 시: 항상 실시간 계산하여 `PENDING` 상태로 반환합니다 (DB 조회 없음).
 - 과거 월 조회 시: DB에 `Settlement`가 있으면 해당 값을 반환, 없으면 실시간 계산하여 `PENDING`으로 반환합니다.
 
@@ -283,7 +287,7 @@ GET /api/v1/operator/settlement?startDate=2025-03-01&endDate=2025-03-31
 ### 운영자 단건 지급 처리 (CONFIRMED → PAID)
 
 ```
-POST /api/v1/operator/settlement/{settlementId}/pay
+POST /api/v1/operator/settlement/settlement-10/pay
 ```
 
 - CONFIRMED 상태의 정산만 PAID로 전환 가능. PENDING 상태면 `INVALID_SETTLEMENT_STATUS` 에러 반환.
@@ -312,8 +316,8 @@ POST /api/v1/admin/settlement/create
 Content-Type: application/json
 
 {
-  "creatorId": "creator-10",
-  "yearMonth": "2025-03"
+  "creatorId": "creator-1",
+  "yearMonth": "2026-03"
 }
 ```
 
@@ -331,7 +335,8 @@ POST /api/v1/admin/settlement/confirm
 Content-Type: application/json
 
 {
-  "settlementId": "settlement-10"
+    "creatorId": "creator-1",
+    "yearMonth": "2026-03"
 }
 ```
 
@@ -482,6 +487,7 @@ yearMonth <  현재 월  →  Settlement 있으면 DB에서 반환
 - **IdGenerator 재시작 시 초기화**: `AtomicLong` 기반으로 재시작 시 초기화됩니다. 운영 환경에서는 UUID 또는 DB 시퀀스 기반 ID 전략 교체가 필요합니다.
 - **배치 스킵 정책**: `skip(BusinessException.class).skipLimit(10)`으로 비즈니스 레벨에서 예외가 발생하는 개별 크리에이터 실패가 전체 배치를 중단시키지 않습니다.
 - **정산 확정 이후 취소 불가**: 정산금 결제 이후 취소/환불 가능 시 환불금이 이월되어야 하거나 크리에이터 -> 플랫폼으로 출금하는 상황이 필요해지므로, 확정 레벨 이후 추가 환불이 불가한 정책을 기반으로 개발했습니다.
+- **강의 할인 이벤트 미반영**: 강의료 10% 할인과 같은 부가적인 이벤트는 배제하고 설계하였습니다.
 
 ---
 

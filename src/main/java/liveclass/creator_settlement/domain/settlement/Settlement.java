@@ -4,10 +4,10 @@ import jakarta.persistence.*;
 import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 
 @Entity
@@ -53,9 +53,13 @@ public class Settlement {
     @Column(name = "cancel_count", nullable = false)
     public long cancelCount = 0L;
 
-    @CreationTimestamp
     @Column(updatable = false, nullable = false)
     public LocalDateTime createdAt;
+
+    @PrePersist
+    public void prePersist() {
+        createdAt = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    }
 
     @Column(name = "confirmed_at")
     public LocalDateTime confirmedAt;
@@ -91,12 +95,12 @@ public class Settlement {
 
     public void confirm() {
         this.status = SettlementStatus.CONFIRMED;
-        this.confirmedAt = LocalDateTime.now();
+        this.confirmedAt = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     }
 
     public void markAsPaid() {
         this.status = SettlementStatus.PAID;
-        this.paidAt = LocalDateTime.now();
+        this.paidAt = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     }
 
 

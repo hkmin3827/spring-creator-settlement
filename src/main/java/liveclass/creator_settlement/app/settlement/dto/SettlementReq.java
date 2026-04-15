@@ -5,4 +5,4 @@ import jakarta.validation.constraints.NotBlank;
 import java.time.YearMonth;
 
 // create or confirm
-public record SettlementReq(@NotBlank String creatorId, YearMonth yearMonth) { }
+public record SettlementReq(@NotBlank String creatorId, String yearMonth) { }
