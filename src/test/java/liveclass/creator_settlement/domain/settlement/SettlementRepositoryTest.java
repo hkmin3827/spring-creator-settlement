@@ -1,6 +1,5 @@
 package liveclass.creator_settlement.domain.settlement;
 
-import jakarta.persistence.EntityManager;
 import liveclass.creator_settlement.domain.creator.Creator;
 import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
 import org.junit.jupiter.api.AfterEach;

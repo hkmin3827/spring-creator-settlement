@@ -3,7 +3,6 @@ package liveclass.creator_settlement.domain.saleRecord;
 import liveclass.creator_settlement.app.settlement.dto.CreatorAggregationDto;
 import liveclass.creator_settlement.domain.course.Course;
 import liveclass.creator_settlement.domain.creator.Creator;
-import liveclass.creator_settlement.domain.settlement.Settlement;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
