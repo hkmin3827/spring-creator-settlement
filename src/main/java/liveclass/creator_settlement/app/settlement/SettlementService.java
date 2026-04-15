@@ -1,5 +1,7 @@
 package liveclass.creator_settlement.app.settlement;
 
+import liveclass.creator_settlement.app.settlement.dto.CancelAggregationDto;
+import liveclass.creator_settlement.app.settlement.dto.SaleAggregationDto;
 import liveclass.creator_settlement.app.settlement.dto.SettlementCalculation;
 import liveclass.creator_settlement.domain.cancelRecord.CancelRecordRepository;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
@@ -14,15 +16,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.QueryTimeoutException;
-import org.springframework.data.domain.Pageable;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -37,24 +40,24 @@ public class SettlementService {
     private final IdGenerator idGenerator;
     private final SettlementRepository settlementRepository;
 
-    public String createPending(String creatorId, String yearMonth) {
-        if (!YearMonth.now().isAfter(YearMonth.parse(yearMonth))) {
-            throw new BusinessException(ErrorCode.YEAR_MONTH_BAD_REQUEST);
+    public String createPending(String creatorId, YearMonth yearMonth) {
+        if (!YearMonth.now().isAfter(yearMonth)) {
+            throw new BusinessException(ErrorCode.INVALID_SETTLEMENT_CREATE_OR_CONFIRMED_YEAR_MONTH);
         }
 
         if (settlementRepository.existsByCreatorIdAndYearMonth(
-                creatorId, yearMonth)) {
+                creatorId, yearMonth.toString())) {
             throw new BusinessException(ErrorCode.SETTLEMENT_ALREADY_EXISTS);
         }
 
 
-        SettlementCalculation calc = calculate(creatorId, YearMonth.parse(yearMonth));
+        SettlementCalculation calc = calculate(creatorId, yearMonth);
 
         BigDecimal commissionAmount = calc.netAmount().multiply(commissionRate);
         BigDecimal settleAmount = calc.netAmount().subtract(commissionAmount);
 
         Settlement newSm = Settlement.create(
-                idGenerator.generateSettlementId(), creatorId, yearMonth,
+                idGenerator.generateSettlementId(), creatorId, yearMonth.toString(),
                 calc.totalAmount(),
                 calc.refundAmount(),
                 calc.netAmount(),
@@ -68,9 +71,13 @@ public class SettlementService {
         return newSm.id;
     }
 
-    public void confirmPending(String settlementId) {
-        Settlement settlement = settlementRepository.findById(settlementId)
+    public void confirmPending(String creatorId, YearMonth yearMonth) {
+        Settlement settlement = settlementRepository.findByCreatorIdAndYearMonth(creatorId, yearMonth.toString())
                 .orElseThrow(() -> new BusinessException(ErrorCode.SETTLEMENT_NOT_FOUND));
+
+        if (!YearMonth.now().isAfter(YearMonth.parse(settlement.yearMonth))) {
+            throw new BusinessException(ErrorCode.INVALID_SETTLEMENT_CREATE_OR_CONFIRMED_YEAR_MONTH);
+        }
 
         if (settlement.status != SettlementStatus.PENDING) {
             throw new BusinessException(ErrorCode.ALREADY_CONFIRMED_SETTLEMENT);
@@ -95,7 +102,8 @@ public class SettlementService {
 
     public int bulkAsPaidMonthly(YearMonth yearMonth) {
         try {
-            int updateCount = settlementRepository.bulkUpdateStatus(yearMonth.toString(), SettlementStatus.PAID, SettlementStatus.CONFIRMED);
+            LocalDateTime paidAt = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+            int updateCount = settlementRepository.bulkUpdateStatus(yearMonth.toString(), SettlementStatus.PAID, SettlementStatus.CONFIRMED, paidAt);
             if (updateCount == 0) {
                 throw new BusinessException(ErrorCode.NO_CONFIRMED_SETTLEMENTS);
             }
@@ -113,18 +121,11 @@ public class SettlementService {
         var start = yearMonth.atDay(1).atStartOfDay();
         var end = yearMonth.atEndOfMonth().atTime(LocalTime.MAX);
 
-        var sales = saleRecordRepository.findByCreatorIdAndPaidAtBetween(creatorId, start, end, Pageable.unpaged()).toList();
-        var cancels = cancelRecordRepository.findByCreatorIdAndCancelledAtBetween(creatorId, start, end);
+        SaleAggregationDto saleAgg = saleRecordRepository.aggregateSalesForSettlement(creatorId, start, end);
+        CancelAggregationDto cancelAgg = cancelRecordRepository.aggregateCancelsForSettlement(creatorId, start, end);
 
-        Money totalAmount = sales.stream()
-                .map(s -> Money.of(s.amount))
-                .reduce(Money.ZERO, Money::add);
-
-        Money refundAmount = cancels.stream()
-                .filter(c -> !c.paidAt.isBefore(start) && !c.paidAt.isAfter(end))
-                .map(c -> Money.of(c.refundAmount))
-                .reduce(Money.ZERO, Money::add);
-
+        Money totalAmount = saleAgg.totalAmount() != null ? Money.of(saleAgg.totalAmount()) : Money.ZERO;
+        Money refundAmount = cancelAgg.refundAmount() != null ? Money.of(cancelAgg.refundAmount()) : Money.ZERO;
         Money netAmount = totalAmount.subtract(refundAmount);
 
         BigDecimal finalCommissionAmount = netAmount.amount().multiply(commissionRate).setScale(0, RoundingMode.DOWN);
@@ -137,8 +138,8 @@ public class SettlementService {
                 commissionRate,
                 finalCommissionAmount,
                 settlementAmount,
-                sales.size(),
-                cancels.size()
+                saleAgg.sellCount(),
+                cancelAgg.cancelCount()
         );
     }
 }

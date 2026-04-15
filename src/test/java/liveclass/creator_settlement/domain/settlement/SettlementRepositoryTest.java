@@ -17,6 +17,8 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -26,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.set;
 
 @DataJpaTest
 @ActiveProfiles("test")
@@ -153,7 +154,14 @@ public class SettlementRepositoryTest {
     @Test
     @DisplayName("bulkUpdateStatus - 성공")
     void bulkUpdateStatus_성공() {
-        int updatedCount = settlementRepository.bulkUpdateStatus("2026-03", SettlementStatus.PAID, SettlementStatus.PENDING);
+        Settlement s1 = settlementRepository.findById("settlement-1").orElseThrow();
+        Settlement s2 = settlementRepository.findById("settlement-2").orElseThrow();
+        Settlement s3 = settlementRepository.findById("settlement-3").orElseThrow();
+        s1.confirm();
+        s2.confirm();
+        s3.confirm();
+
+        int updatedCount = settlementRepository.bulkUpdateStatus("2026-03", SettlementStatus.PAID, SettlementStatus.CONFIRMED, LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
 
         assertThat(updatedCount).isEqualTo(2);
 
@@ -170,7 +178,7 @@ public class SettlementRepositoryTest {
         em.flush();
         em.clear();
 
-        int updatedCount = settlementRepository.bulkUpdateStatus("2025-12", SettlementStatus.PAID, SettlementStatus.PENDING);
+        int updatedCount = settlementRepository.bulkUpdateStatus("2025-12", SettlementStatus.PAID, SettlementStatus.CONFIRMED, LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
 
         assertThat(updatedCount).isEqualTo(0);
     }

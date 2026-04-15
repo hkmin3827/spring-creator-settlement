@@ -1,5 +1,6 @@
 package liveclass.creator_settlement.domain.cancelRecord;
 
+import liveclass.creator_settlement.app.settlement.dto.CancelAggregationDto;
 import liveclass.creator_settlement.app.settlement.dto.CreatorAggregationDto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -12,13 +13,29 @@ public interface CancelRecordRepository extends JpaRepository<CancelRecord, Stri
 
     @Query("""
         SELECT cr FROM CancelRecord cr
-        WHERE cr.cancelledAt >= :start AND cr.cancelledAt <= :end
-        AND cr.saleRecordId IN (
-            SELECT sr.id FROM SaleRecord sr
-            WHERE sr.courseId IN (SELECT c.id FROM Course c WHERE c.creatorId = :creatorId)
-        )
+        JOIN SaleRecord sr ON cr.saleRecordId = sr.id
+        JOIN Course c ON sr.courseId = c.id
+        WHERE c.creatorId = :creatorId
+        AND cr.cancelledAt >= :start AND cr.cancelledAt <= :end
         """)
     List<CancelRecord> findByCreatorIdAndCancelledAtBetween(
+            @Param("creatorId") String creatorId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
+    @Query("""
+        SELECT new liveclass.creator_settlement.app.settlement.dto.CancelAggregationDto(
+            SUM(CASE WHEN sr.paidAt >= :start AND sr.paidAt <= :end THEN cr.refundAmount ELSE null END),
+            COUNT(cr.id)
+        )
+        FROM CancelRecord cr
+        JOIN SaleRecord sr ON cr.saleRecordId = sr.id
+        JOIN Course c ON sr.courseId = c.id
+        WHERE c.creatorId = :creatorId
+        AND cr.cancelledAt >= :start AND cr.cancelledAt <= :end
+        """)
+    CancelAggregationDto aggregateCancelsForSettlement(
             @Param("creatorId") String creatorId,
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end

@@ -274,8 +274,9 @@ class CancelRecordServiceTest {
     @Test
     @DisplayName("성공 - 동월 다수 취소 시 각각 독립적으로 처리")
     void register_동월에_다수_취소_발생시_각각_독립적으로_처리() {
-        SaleRecord sr4 = SaleRecord.of("sale-4", "course-2", "student-4", new BigDecimal("60000"), paidAtPrevMonthLastDay);
-        SaleRecord sr5 = SaleRecord.of("sale-5", "course-2", "student-5", new BigDecimal("60000"), paidAtPrevMonthLastDay);
+        SaleRecord sr3ThisMonth = SaleRecord.of("sale-3", "course-2", "student-3", new BigDecimal("60000"), paidAtThisMonth);
+        SaleRecord sr4 = SaleRecord.of("sale-4", "course-2", "student-4", new BigDecimal("60000"), paidAtThisMonth);
+        SaleRecord sr5 = SaleRecord.of("sale-5", "course-2", "student-5", new BigDecimal("60000"), paidAtThisMonth);
 
         CancelRecord cr1 = CancelRecord.of("cancel-10", "sale-1", paidAtThisMonth, new BigDecimal("100000"), LocalDateTime.now());
         CancelRecord cr2 = CancelRecord.of("cancel-11", "sale-2", paidAtThisMonth, new BigDecimal("100000"), LocalDateTime.now());
@@ -283,8 +284,9 @@ class CancelRecordServiceTest {
         CancelRecord cr4 = CancelRecord.of("cancel-13", "sale-4", paidAtThisMonth, new BigDecimal("100000"), LocalDateTime.now());
         CancelRecord cr5 = CancelRecord.of("cancel-14", "sale-5", paidAtThisMonth, new BigDecimal("100000"), LocalDateTime.now());
 
+
         given(saleRecordRepository.findByIdWithPessimisticLock("sale-2")).willReturn(Optional.of(sr2));
-        given(saleRecordRepository.findByIdWithPessimisticLock("sale-3")).willReturn(Optional.of(sr3));
+        given(saleRecordRepository.findByIdWithPessimisticLock("sale-3")).willReturn(Optional.of(sr3ThisMonth));
         given(saleRecordRepository.findByIdWithPessimisticLock("sale-4")).willReturn(Optional.of(sr4));
         given(saleRecordRepository.findByIdWithPessimisticLock("sale-5")).willReturn(Optional.of(sr5));
         given(courseRepository.findById("course-2")).willReturn(Optional.of(cs2));

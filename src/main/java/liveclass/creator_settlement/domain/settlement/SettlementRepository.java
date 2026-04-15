@@ -6,6 +6,7 @@ import liveclass.creator_settlement.domain.settlement.constant.SettlementStatus;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface SettlementRepository extends JpaRepository<Settlement, String> {
@@ -19,7 +20,6 @@ public interface SettlementRepository extends JpaRepository<Settlement, String> 
     Optional<Settlement> findByCreatorIdAndYearMonthWithPessimisticLock(@Param("creatorId") String creatorId, @Param("yearMonth") String yearMonth);
 
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE Settlement sm SET sm.status = :newStatus " +
-            "WHERE sm.yearMonth = :yearMonth AND sm.status = :oldStatus")
-    int bulkUpdateStatus(@Param("yearMonth") String yearMonth, @Param("newStatus") SettlementStatus newStatus, @Param("oldStatus") SettlementStatus oldStatus);
+    @Query("UPDATE Settlement sm SET sm.status = :newStatus, sm.paidAt = :paidAt WHERE sm.yearMonth = :yearMonth AND sm.status = :oldStatus")
+    int bulkUpdateStatus(@Param("yearMonth") String yearMonth, @Param("newStatus") SettlementStatus newStatus, @Param("oldStatus") SettlementStatus oldStatus, @Param("paidAt") LocalDateTime paidAt);
 }

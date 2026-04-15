@@ -1,10 +1,10 @@
 package liveclass.creator_settlement.app.settlement;
 
 import liveclass.creator_settlement.app.creator.CreatorQueryService;
+import liveclass.creator_settlement.app.settlement.dto.CancelAggregationDto;
 import liveclass.creator_settlement.app.settlement.dto.MonthlySettlementRes;
-import liveclass.creator_settlement.domain.cancelRecord.CancelRecord;
+import liveclass.creator_settlement.app.settlement.dto.SaleAggregationDto;
 import liveclass.creator_settlement.domain.cancelRecord.CancelRecordRepository;
-import liveclass.creator_settlement.domain.saleRecord.SaleRecord;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
 import liveclass.creator_settlement.domain.settlement.Settlement;
 import liveclass.creator_settlement.domain.settlement.SettlementRepository;
@@ -18,14 +18,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.YearMonth;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,17 +54,11 @@ class SettlementQueryServiceTest {
     @Test
     void getMonthlySettlement_현재월_실시간_계산_반환() {
         YearMonth currentMonth = YearMonth.now();
-        LocalDateTime paidAt = currentMonth.atDay(5).atStartOfDay();
 
-        given(saleRecordRepository.findByCreatorIdAndPaidAtBetween(eq("creator-1"), any(), any(), any(Pageable.class)))
-                .willReturn(new PageImpl<>(List.of(
-                        SaleRecord.of("sale-1", "course-1", "student-1", new BigDecimal("200000"), paidAt),
-                        SaleRecord.of("sale-2", "course-1", "student-2", new BigDecimal("100000"), paidAt)
-                )));
-        given(cancelRecordRepository.findByCreatorIdAndCancelledAtBetween(eq("creator-1"), any(), any()))
-                .willReturn(List.of(
-                        CancelRecord.of("cancel-1", "sale-2", paidAt, new BigDecimal("50000"), paidAt.plusDays(2))
-                ));
+        given(saleRecordRepository.aggregateSalesForSettlement(eq("creator-1"), any(), any()))
+                .willReturn(new SaleAggregationDto(new BigDecimal("300000"), 2L));
+        given(cancelRecordRepository.aggregateCancelsForSettlement(eq("creator-1"), any(), any()))
+                .willReturn(new CancelAggregationDto(new BigDecimal("50000"), 1L));
         given(creatorQueryService.getCreatorName("creator-1")).willReturn("김강사");
 
         MonthlySettlementRes result = settlementQueryService.getMonthlySettlement("creator-1", currentMonth);
@@ -113,17 +103,10 @@ class SettlementQueryServiceTest {
 
     @Test
     void getMonthlySettlement_DB에_없으면_PENDING으로_계산하여_반환() {
-        LocalDateTime paidAt = LocalDateTime.of(2025, 3, 10, 10, 0);
-
-        given(saleRecordRepository.findByCreatorIdAndPaidAtBetween(eq("creator-1"), any(), any(), any(Pageable.class)))
-                .willReturn(new PageImpl<>(List.of(
-                        SaleRecord.of("sale-1", "course-1", "student-1", new BigDecimal("200000"), paidAt),
-                        SaleRecord.of("sale-2", "course-1", "student-2", new BigDecimal("100000"), paidAt)
-                )));
-        given(cancelRecordRepository.findByCreatorIdAndCancelledAtBetween(eq("creator-1"), any(), any()))
-                .willReturn(List.of(
-                        CancelRecord.of("cancel-1", "sale-2", paidAt, new BigDecimal("50000"), paidAt.plusDays(2))
-                ));
+        given(saleRecordRepository.aggregateSalesForSettlement(eq("creator-1"), any(), any()))
+                .willReturn(new SaleAggregationDto(new BigDecimal("300000"), 2L));
+        given(cancelRecordRepository.aggregateCancelsForSettlement(eq("creator-1"), any(), any()))
+                .willReturn(new CancelAggregationDto(new BigDecimal("50000"), 1L));
         given(creatorQueryService.getCreatorName("creator-1")).willReturn("김강사");
         given(settlementRepository.findByCreatorIdAndYearMonth("creator-1", "2025-03"))
                 .willReturn(Optional.empty());
@@ -146,6 +129,6 @@ class SettlementQueryServiceTest {
         assertThatThrownBy(() -> settlementQueryService.getMonthlySettlement("creator-1", YearMonth.now().plusMonths(1)))
                 .isInstanceOf(BusinessException.class)
                 .extracting(e -> ((BusinessException) e).getErrorCode())
-                .isEqualTo(ErrorCode.YEAR_MONTH_BAD_REQUEST);
+                .isEqualTo(ErrorCode.INVALID_SETTLEMENT_QUERY_YEAR_MONTH);
     }
 }
