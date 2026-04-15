@@ -30,19 +30,19 @@ public class SettlementCreateBatchConfig {
     private final EntityManagerFactory entityManagerFactory;
 
     @Bean
-    public Job settlementCreateJob(Step settlementCreateStep) {
-        return new JobBuilder("settlementCreateJob", jobRepository)
-                .start(settlementCreateStep)
+    public Job monthlySettlementCreateJob(Step monthlySettlementCreateStep) {
+        return new JobBuilder("monthlySettlementCreateJob", jobRepository)
+                .start(monthlySettlementCreateStep)
                 .build();
     }
 
     @Bean
-    public Step settlementCreateStep(
+    public Step monthlySettlementCreateStep(
             JpaPagingItemReader<Creator> creatorItemReader,
             SettlementCreateItemProcessor processor,
             SettlementCreateItemWriter writer,
             SettlementCreateSkipListener skipListener) {
-        return new StepBuilder("settlementCreateStep", jobRepository)
+        return new StepBuilder("monthlySettlementCreateStep", jobRepository)
                 .<Creator, SettlementBatchItem>chunk(50)
                 .reader(creatorItemReader)
                 .processor(processor)

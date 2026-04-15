@@ -14,12 +14,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import liveclass.creator_settlement.global.exception.BusinessException;
+import liveclass.creator_settlement.global.exception.ErrorCode;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
@@ -52,7 +56,7 @@ class OperatorSettlementQueryServiceTest {
                 .willReturn(Map.of("creator-1", "최강사", "creator-2", "서강사"));
 
         OperatorSettlementRes result = operatorSettlementQueryService.getOperatorAggregate(
-                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31), PageRequest.of(0, Integer.MAX_VALUE)
+                LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31), PageRequest.of(0, Integer.MAX_VALUE)
         );
 
         assertThat(result.entries().content()).hasSize(2);
@@ -83,7 +87,7 @@ class OperatorSettlementQueryServiceTest {
                 .willReturn(Map.of("creator-1", "최강사", "creator-2", "서강사"));
 
         OperatorSettlementRes result = operatorSettlementQueryService.getOperatorAggregate(
-                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31), PageRequest.of(0, Integer.MAX_VALUE)
+                LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31), PageRequest.of(0, Integer.MAX_VALUE)
         );
 
         assertThat(result.entries().content()).hasSize(2);
@@ -94,5 +98,15 @@ class OperatorSettlementQueryServiceTest {
 
         assertThat(creator2.creatorName()).isEqualTo("서강사");
         assertThat(creator2.settleAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    void getOperatorAggregate_endDate가_startDate보다_이전이면_예외() {
+        assertThatThrownBy(() -> operatorSettlementQueryService.getOperatorAggregate(
+                LocalDate.of(2026, 3, 31), LocalDate.of(2026, 3, 1), PageRequest.of(0, 20)
+        ))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.END_DATE_BEFORE_START_DATE);
     }
 }

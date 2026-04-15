@@ -17,7 +17,7 @@ import java.time.YearMonth;
 public class MonthlySettlementScheduler {
 
     private final JobOperator jobOperator;
-    private final Job settlementCreateJob;
+    private final Job monthlySettlementCreateJob;
     private final Job monthlySettlementConfirmJob;
 
     @Scheduled(cron = "0 5 0 1 * *", zone = "Asia/Seoul")
@@ -31,7 +31,7 @@ public class MonthlySettlementScheduler {
                 .toJobParameters();
 
         try {
-            jobOperator.start(settlementCreateJob, params);
+            jobOperator.start(monthlySettlementCreateJob, params);
             log.info("월별 정산 생성 배치 완료 - 대상 월: {}", previousMonth);
         } catch (Exception e) {
             log.error("월별 정산 생성 배치 실패 - 대상 월: {}", previousMonth, e);

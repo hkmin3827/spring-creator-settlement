@@ -13,7 +13,8 @@ import java.time.temporal.ChronoUnit;
 @Table(
         name = "sale_records",
         indexes = {
-                @Index(name = "idx_sale_record_course_paid", columnList = "course_id, paid_at")
+                @Index(name = "idx_sale_record_course_paid_at", columnList = "course_id, paid_at"),
+                @Index(name = "idx_sale_record_paid_at_course", columnList = "paid_at, course_id")
         },
         uniqueConstraints = @UniqueConstraint(name = "uk_salerecord_course_student", columnNames = {"course_id", "student_id"})
 )

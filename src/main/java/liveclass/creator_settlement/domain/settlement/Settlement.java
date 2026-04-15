@@ -13,7 +13,8 @@ import java.time.temporal.ChronoUnit;
 @Entity
 @Table(
         name = "settlements",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"creator_id", "year_month"})
+        uniqueConstraints = @UniqueConstraint(columnNames = {"creator_id", "year_month"}),
+        indexes = @Index(name = "idx_settlement_year_month_status", columnList = "year_month, status")
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Settlement {

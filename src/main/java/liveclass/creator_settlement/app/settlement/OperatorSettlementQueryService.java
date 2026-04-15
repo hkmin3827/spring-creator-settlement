@@ -6,6 +6,8 @@ import liveclass.creator_settlement.app.settlement.dto.CreatorAggregationDto;
 import liveclass.creator_settlement.domain.cancelRecord.CancelRecordRepository;
 import liveclass.creator_settlement.domain.saleRecord.SaleRecordRepository;
 import liveclass.creator_settlement.domain.vo.Money;
+import liveclass.creator_settlement.global.exception.BusinessException;
+import liveclass.creator_settlement.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -36,6 +38,9 @@ public class OperatorSettlementQueryService {
     private BigDecimal commissionRate;
 
     public OperatorSettlementRes getOperatorAggregate(LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        if (endDate.isBefore(startDate)) {
+            throw new BusinessException(ErrorCode.END_DATE_BEFORE_START_DATE);
+        }
         var start = startDate.atStartOfDay();
         var end = endDate.atTime(LocalTime.MAX);
 

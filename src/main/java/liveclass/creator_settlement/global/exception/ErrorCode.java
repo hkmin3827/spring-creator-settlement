@@ -29,7 +29,9 @@ public enum ErrorCode {
     NO_CONFIRMED_SETTLEMENTS(HttpStatus.NOT_FOUND, "해당 월에 지급 가능한 CONFIRMED 상태의 정산이 없습니다."),
     DB_CONSTRAINT_VIOLATION(HttpStatus.CONFLICT, "DB 제약 조건 위반으로 처리에 실패했습니다."),
     QUERY_TIMEOUT(HttpStatus.SERVICE_UNAVAILABLE, "쿼리 처리 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요."),
-    EXPIRED_CANCEL_PARIOD(HttpStatus.CONFLICT, "15일이 지난 판매 내역은 취소/환불 불가능합니다.");
+    EXPIRED_CANCEL_PARIOD(HttpStatus.CONFLICT, "15일이 지난 판매 내역은 취소/환불 불가능합니다."),
+    INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "startDate와 endDate는 둘 다 입력하거나 둘 다 생략해야 합니다."),
+    END_DATE_BEFORE_START_DATE(HttpStatus.BAD_REQUEST, "종료일은 시작일보다 이전일 수 없습니다.");
 
     public final HttpStatus status;
     public final String message;

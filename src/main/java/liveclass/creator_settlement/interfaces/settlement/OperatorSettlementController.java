@@ -4,6 +4,8 @@ import liveclass.creator_settlement.app.settlement.OperatorSettlementQueryServic
 import liveclass.creator_settlement.app.settlement.SettlementService;
 import liveclass.creator_settlement.app.settlement.dto.OperatorSettlementReq;
 import liveclass.creator_settlement.app.settlement.dto.OperatorSettlementRes;
+import liveclass.creator_settlement.global.exception.BusinessException;
+import liveclass.creator_settlement.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -25,6 +27,9 @@ public class OperatorSettlementController {
             @ModelAttribute OperatorSettlementReq req,
             @PageableDefault(size = 20) Pageable pageable
     ) {
+        if ((req.startDate() == null) != (req.endDate() == null)) {
+            throw new BusinessException(ErrorCode.INVALID_DATE_RANGE);
+        }
         YearMonth lastMonth = YearMonth.now().minusMonths(1);
         LocalDate startDate = req.startDate() != null ? req.startDate() : lastMonth.atDay(1);
         LocalDate endDate = req.endDate() != null ? req.endDate() : lastMonth.atEndOfMonth();

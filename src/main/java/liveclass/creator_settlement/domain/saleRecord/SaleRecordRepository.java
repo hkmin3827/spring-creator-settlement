@@ -39,7 +39,8 @@ public interface SaleRecordRepository extends JpaRepository<SaleRecord, String> 
 
     @Query("""
         SELECT sr FROM SaleRecord sr
-        WHERE sr.courseId IN (SELECT c.id FROM Course c WHERE c.creatorId = :creatorId)
+        JOIN Course c ON sr.courseId = c.id
+        WHERE c.creatorId = :creatorId
         AND sr.paidAt >= :start
         ORDER BY sr.paidAt DESC
         """)
@@ -51,7 +52,8 @@ public interface SaleRecordRepository extends JpaRepository<SaleRecord, String> 
 
     @Query("""
         SELECT sr FROM SaleRecord sr
-        WHERE sr.courseId IN (SELECT c.id FROM Course c WHERE c.creatorId = :creatorId)
+        JOIN Course c ON sr.courseId = c.id
+        WHERE c.creatorId = :creatorId
         AND sr.paidAt <= :end
         ORDER BY sr.paidAt DESC
         """)
@@ -63,7 +65,8 @@ public interface SaleRecordRepository extends JpaRepository<SaleRecord, String> 
 
     @Query("""
         SELECT sr FROM SaleRecord sr
-        WHERE sr.courseId IN (SELECT c.id FROM Course c WHERE c.creatorId = :creatorId)
+        JOIN Course c ON sr.courseId = c.id
+        WHERE c.creatorId = :creatorId
         ORDER BY sr.paidAt DESC
         """)
     Page<SaleRecord> findAllByCreatorId(@Param("creatorId") String creatorId, Pageable pageable);
