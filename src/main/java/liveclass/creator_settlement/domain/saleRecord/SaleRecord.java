@@ -4,17 +4,16 @@ import jakarta.persistence.*;
 import liveclass.creator_settlement.domain.saleRecord.constant.SaleRecordStatus;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(
         name = "sale_records",
         indexes = {
-                @Index(name = "idx_sale_record_course_id", columnList = "course_id"),
-                @Index(name = "idx_sale_record_paid_at", columnList = "paid_at")
+                @Index(name = "idx_sale_record_course_paid", columnList = "course_id, paid_at")
         },
         uniqueConstraints = @UniqueConstraint(name = "uk_salerecord_course_student", columnNames = {"course_id", "student_id"})
 )
@@ -27,16 +26,15 @@ public class SaleRecord {
     @Column(nullable = false)
     public SaleRecordStatus status;
 
-    @Column(name="course_id", nullable = false)
+    @Column(name="course_id", nullable = false, updatable = false)
     public String courseId;
 
-    @Column(name="student_id", nullable = false)
+    @Column(name="student_id", nullable = false, updatable = false)
     public String studentId;
 
     @Column(nullable = false, updatable = false, precision = 6)
     public BigDecimal amount;
 
-//    @CreationTimestamp
     @Column(nullable = false, updatable = false)
     public LocalDateTime paidAt;
 
@@ -48,7 +46,7 @@ public class SaleRecord {
         record.studentId = studentId;
         record.amount = amount;
         record.status = SaleRecordStatus.PAID;
-        record.paidAt = paidAt;
+        record.paidAt = paidAt != null ? paidAt : LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
         return record;
     }
 
