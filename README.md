@@ -25,7 +25,6 @@
 | DB (테스트) | H2 (PostgreSQL 호환 모드) |
 | 캐시 | Caffeine Cache |
 | 배치 | Spring Batch |
-| 동시성 | Virtual Threads (Spring Boot 기본 활성화) |
 | 검증 | Bean Validation (jakarta.validation) |
 | 빌드 | Gradle |
 | 기타 | Lombok, spring-dotenv |
